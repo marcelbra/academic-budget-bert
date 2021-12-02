@@ -1,0 +1,78 @@
+
+python shard_data.py \
+    --dir /home/marcelbraasch/PycharmProjects/LM_pre_training/Wikipedia \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards \
+    --num_train_shards 4 \
+    --num_test_shards 1 \
+    --frac_test 0.1
+
+python generate_samples.py \
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/masked_samples \
+    --dup_factor 10 \
+    --seed 42 \
+    --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
+    --do_lower_case 1 \
+    --masked_lm_prob 0.15 \
+    --max_seq_length 128 \
+    --model_name bert-large-uncased \
+    --max_predictions_per_seq 20 \
+    --n_processes 16
+
+deepspeed run_pretraining.py \
+  --model_type bert-mlm --tokenizer_name bert-large-uncased \
+  --hidden_act gelu \
+  --hidden_size 1024 \
+  --num_hidden_layers 24 \
+  --num_attention_heads 16 \
+  --intermediate_size 4096 \
+  --hidden_dropout_prob 0.1 \
+  --attention_probs_dropout_prob 0.1 \
+  --encoder_ln_mode pre-ln \
+  --lr 1e-3 \
+  --train_batch_size 4096 \
+  --train_micro_batch_size_per_gpu 32 \
+  --lr_schedule time \
+  --curve linear \
+  --warmup_proportion 0.06 \
+  --gradient_clipping 0.0 \
+  --optimizer_type adamw \
+  --weight_decay 0.01 \
+  --adam_beta1 0.9 \
+  --adam_beta2 0.98 \
+  --adam_eps 1e-6 \
+  --total_training_time 24.0 \
+  --early_exit_time_marker 24.0 \
+  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/masked_samples \
+  --output_dir /tmp/training-out \
+  --print_steps 100 \
+  --num_epochs_between_checkpoints 10000 \
+  --job_name pretraining_experiment \
+  --project_name budget-bert-pretraining \
+  --validation_epochs 3 \
+  --validation_epochs_begin 1 \
+  --validation_epochs_end 1 \
+  --validation_begin_proportion 0.05 \
+  --validation_end_proportion 0.01 \
+  --validation_micro_batch 16 \
+  --deepspeed \
+  --data_loader_type dist \
+  --do_validation \
+  --use_early_stopping \
+  --early_stop_time 180 \
+  --early_stop_eval_loss 6 \
+  --seed 42 \
+  --fp16
+
+
+cd ~/PycharmProjects/academic-budget-bert
+python3 -m virtualenv pretraining
+source pretraining/bin/activate
+/home/marcelbraasch/PycharmProjects/academic-budget-bert/pretraining/bin/python -m pip install --upgrade pip
+pip3 install -r requirements.txt
+
+
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip3 install -v --disable-pip-version-check --no-cache-dir \
+--global-option="--cpp_ext" --global-option="--cuda_ext" ./
