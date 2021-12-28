@@ -1,9 +1,9 @@
 
-python shard_data.py \
-    --dir /home/marcelbraasch/PycharmProjects/LM_pre_training/Wikipedia \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards \
-    --num_train_shards 4 \
-    --num_test_shards 1 \
+python3 /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/shard_data.py \
+    --dir ~/PycharmProjects/academic-budget-bert/dataset/Wikipedia \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards_2 \
+    --num_train_shards 256 \
+    --num_test_shards 128 \
     --frac_test 0.1
 
 python generate_samples.py \
@@ -69,7 +69,6 @@ cd ~/PycharmProjects/academic-budget-bert
 python3 -m virtualenv pretraining
 source pretraining/bin/activate
 /home/marcelbraasch/PycharmProjects/academic-budget-bert/pretraining/bin/python -m pip install --upgrade pip
-pip3 install -r requirements.txt
 
 
 git clone https://github.com/NVIDIA/apex
