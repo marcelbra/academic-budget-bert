@@ -74,6 +74,7 @@ global_data_samples = 0
 
 def get_valid_dataloader(args, dataset: Dataset):
     if args.local_rank == -1:
+        # TODO: remove
         train_sampler = RandomSampler(dataset)
     else:
         train_sampler = DistributedSampler(dataset)
@@ -236,7 +237,7 @@ def train(
                 * args.log_throughput_every
             )
             logger.info(
-                "At step {}, the throughput is {:2f} Samples/s".format(
+                "At step {}, the throughput is {:2f} Sampyles/s".format(
                     global_step * args.gradient_accumulation_steps, one_step_bs / all_step_time
                 )
             )

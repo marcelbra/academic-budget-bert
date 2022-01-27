@@ -202,11 +202,13 @@ class PreTrainingDataset(BertDatasetProviderInterface):
             if os.path.isfile(os.path.join(dataset_path, f)) and data_prefix in f
         ]
         assert len(self.dataset_files) > 0, "No train/test*.hdf5 files found in given dataset path"
+        # TODO: remove
         if data_prefix == "train":
             self.dataset_files.sort()
-        random.shuffle(self.dataset_files)
+        random.shuffle(self.dataset_files)  # Remove
         self.num_files = len(self.dataset_files)
-        self.data_sampler = RandomSampler
+        self.data_sampler = RandomSampler # SequentialSampler samples in order
+
 
         self.worker_init = WorkerInitObj(args.seed + args.local_rank)
         self.dataset_future = None

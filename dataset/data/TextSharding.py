@@ -83,7 +83,7 @@ class Sharding:
             manager = multiprocessing.Manager()
             return_dict = manager.dict()
             jobs = []
-            n_processes = 7  # in addition to the main process, total = n_proc+1
+            n_processes = 28  # in addition to the main process, total = n_proc+1
 
             def work(articles, return_dict):
                 sentences = {}

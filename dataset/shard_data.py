@@ -42,6 +42,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+
+
     input_files = [join(args.dir, f) for f in listdir(args.dir) if f.endswith(".txt")]
     shards_dir = pathlib.Path(args.o)
     print(shards_dir)

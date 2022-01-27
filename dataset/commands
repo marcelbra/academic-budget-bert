@@ -1,27 +1,67 @@
+set up:
+cd ~/PycharmProjects/academic-budget-bert
+python3 -m virtualenv pretraining
+source pretraining/bin/activate
+/home/marcelbraasch/PycharmProjects/academic-budget-bert/pretraining/bin/python -m pip install --upgrade pip
+
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip3 install -v --disable-pip-version-check --no-cache-dir \
+--global-option="--cpp_ext" --global-option="--cuda_ext" ./
+
 disk space:
 df -h (entire machine)
 du --block-size=GB (directory)
 
-1. Run own_utils.process_wiki_from_disk to create two partitions of raw dataset (the entire dataset doesnt fit in RAM)
+1. Create two partitions of raw huggingface wikipedia
+python3 process_raw_to_shardable.py \
+    --dir /media/marcelbraasch/Data2/DroppedDataset/Raw/ \
+    -o /media/marcelbraasch/Data2/DroppedDataset/Split/
+
 2. Shard both partioned datasets one by one
 python3 shard_data.py \
-    --dir ~/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/next \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards_2 \
+    --dir /media/marcelbraasch/Data2/DroppedDataset/Split/First/ \
+    -o /media/marcelbraasch/Data2/DroppedDataset/Shards/Shards_1/ \
     --num_train_shards 1024 \
     --num_test_shards 512 \
     --frac_test 0.1
-3. Run own_utils.rename_files_in_shard.py to rename to unique names
-4. Run $ mv -v shards_2/* shards_1/ to move renamed shards to thhe other folder. Now entire data is sharded and in one place
-5. Verify there are 2048 training and 1024 test files using ls -dq *test* | wc -l
-6. Run to comprimise
+python3 shard_data.py \
+    --dir /media/marcelbraasch/Data2/DroppedDataset/Split/Second/ \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2/ \
+    --num_train_shards 1024 \
+    --num_test_shards 512 \
+    --frac_test 0.1
+
+3. Rename shards to unique names
+python3 rename_files_in_shard.py \
+    --dir1 /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_1/ \
+    --dir2 /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2/ \
+    --num_train_shards 1024 \
+    --num_test_shards 512
+
+###### BUGGY DID BY HAND
+4. Move all shards to top folder and remove subfolders
+sudo cd ~/PycharmProjects/academic-budget-bert/dataset
+sudo mv -r /data/Wikipedia/Shards/Shards_1/* /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/
+sudo mv -r /data/Wikipedia/Shards/Shards_2/* /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/
+sudo rm -r /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_1
+sudo rm -r /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2
+
+
+5. Verify there are 2048 training and 1024 test files
+ls -dq *test* | wc -l
+ls -dq *train* | wc -l
+
+6. Merge shards to create lesser files
 python merge_shards.py \
-    --data ~/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards \
-    --output_dir ~/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards_merged \
+    --data /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/ \
+    --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MergedShards/ \
     --ratio 4
-7. Run
+
+7. Generate Samples
 python generate_samples.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards_merged \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/masked_samples \
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MergedShards/ \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples/ \
     --dup_factor 10 \
     --seed 42 \
     --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
@@ -30,8 +70,12 @@ python generate_samples.py \
     --max_seq_length 128 \
     --model_name bert-large-uncased \
     --max_predictions_per_seq 20 \
-    --n_processes 28
+    --n_processes 29
 
+8. Move MaskedSamples to Internal SSD
+DO MANUALLY
+
+8. Run pretraining
 deepspeed run_pretraining.py \
   --model_type bert-mlm --tokenizer_name bert-large-uncased \
   --hidden_act gelu \
@@ -56,8 +100,8 @@ deepspeed run_pretraining.py \
   --adam_eps 1e-6 \
   --total_training_time 24.0 \
   --early_exit_time_marker 24.0 \
-  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/masked_samples \
-  --output_dir output \
+  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples \
+  --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model/ \
   --print_steps 100 \
   --num_epochs_between_checkpoints 10000 \
   --job_name pretraining_experiment \
@@ -74,17 +118,7 @@ deepspeed run_pretraining.py \
   --use_early_stopping \
   --early_stop_time 180 \
   --early_stop_eval_loss 6 \
-  --seed 42 \
+  --seed 36 \
   --fp16
 
 
-cd ~/PycharmProjects/academic-budget-bert
-python3 -m virtualenv pretraining
-source pretraining/bin/activate
-/home/marcelbraasch/PycharmProjects/academic-budget-bert/pretraining/bin/python -m pip install --upgrade pip
-
-
-git clone https://github.com/NVIDIA/apex
-cd apex
-pip3 install -v --disable-pip-version-check --no-cache-dir \
---global-option="--cpp_ext" --global-option="--cuda_ext" ./
