@@ -27,8 +27,6 @@ def process_wiki_from_disk():
                 ofile2.write(article.replace('\n', ' ') + "\n\n")
         i += 1
 
-process_wiki_from_disk()
-
 def compute_lexical_ratio():
     print("Preparing data.")
     wiki = load_from_disk("/media/marcelbraasch/Data/raw")["train"]
@@ -37,7 +35,7 @@ def compute_lexical_ratio():
     nltk.download("punkt")
     tokenizer = nltk.tokenize.word_tokenize
     closed_class_words = []
-    with open("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/closed_class_words.txt") as f:
+    with open("/dataset/data/closed_class_words.txt") as f:
         for line in f:
             closed_class_words.extend(line.split())
 
@@ -57,35 +55,12 @@ def compute_lexical_ratio():
     print("Saving.")
     wiki.save_to_disk("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/LexicalScores")
 
-def create_new_dataset():
-    path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/LexicalScores"
-    wiki = load_from_disk(path)
-    n = len(wiki)
-    wiki = wiki.sort("LexicalRatio")
-    indices = range(n)
 
-    # get documents lenths
-    data = []
-    with open("scores_and_lengths.pkl", "rb") as f:
-        data = pickle.load(f)
-    _, lengths = data
-
-    n = len(wiki)
-    wiki = wiki.add_column("Index", range(n))
-    wiki = wiki.add_column("Length", lengths)
-    wiki = wiki.filter(lambda x: x["Index"] >= int(n*0.075), num_proc=28)
-    wiki = wiki.filter(lambda x: x["Index"] <= int(n*0.975), num_proc=28)
-    wiki = wiki.sort("Length")
-    wiki = wiki.select(list(range(len(wiki)))[int(len(wiki)*(5/90)):])
-    wiki = wiki.remove_columns("Index")
-    wiki = wiki.remove_columns("Length")
-    wiki = wiki.remove_columns("LexicalRatio")
-    wiki.save_to_disk("/media/marcelbraasch/Data2/DroppedDataset")
 
 def plot_scores_and_lengths():
 
     data = []
-    with open("scores_and_lengths.pkl", "rb") as f:
+    with open("../scores_and_lengths.pkl", "rb") as f:
         data = pickle.load(f)
     _, lengths = data
     x, y, = scores, lengths
@@ -119,7 +94,7 @@ def plot_scores_and_lengths():
 
 
 def prepare_dataset():
-    path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/LexicalScores"
+    path = "/dataset/data/Wikipedia/LexicalScores"
     wiki = load_from_disk(path)
     wiki = wiki.sort("LexicalRatio")
     drop_ratio = 0.15

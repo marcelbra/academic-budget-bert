@@ -104,7 +104,7 @@ class TestTargetLearning:
     def learn_target_word_single(self, data):
         target_word = data[0]["target_word"]
         context = data[0]["context"]
-        masked_index_target = context.split().index(target_word)
+        masked_index_target = context.split().index(target_word) + 1
         input_sequence = self.tokenizer(context)
         attention_mask = torch.tensor(input_sequence["attention_mask"]).unsqueeze(0).to(self.device)
         saved_values = defaultdict(list)

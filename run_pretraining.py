@@ -151,8 +151,13 @@ def train(
     global global_step
     global global_data_samples
 
+    # start = time.time()
+
     dataset_iterator, total_length = pretrain_dataset_provider.get_shard(index)
     current_data_sample_count = global_data_samples
+
+    # end = time.time()
+    # print(f"Iteration over. It takes {(end - start)} seconds to process a file with 7680 files available.")
 
     logger.info(
         f"worker-{dist.get_rank()}: begin epoch {index} current_sample_count {current_data_sample_count} shard_length {total_length} global_data_samples {global_data_samples}"
@@ -166,7 +171,9 @@ def train(
     eval_loss = None
     scale_counter_at_1 = 0
 
+
     for batch_index_number, batch_index in enumerate(tqdm(dataset_iterator, smoothing=1)):
+
 
         if batch_index_number > args.max_steps_per_epoch:
             logger.info("Max steps per epochs reached. Resuming to next epoch ...")
@@ -244,6 +251,8 @@ def train(
             all_step_time = 0.0
 
         del batch
+
+
 
     torch.cuda.synchronize()
     dist.barrier(model.network.data_parallel_group)

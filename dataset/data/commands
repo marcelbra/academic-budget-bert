@@ -13,31 +13,50 @@ disk space:
 df -h (entire machine)
 du --block-size=GB (directory)
 
-1. Create two partitions of raw huggingface wikipedia
+
+python3 prepare_data.py \
+    --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
+    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/ \
+    --num_workers 30 \
+    --ram_size 32 \
+    --num_train_shards 1024 \
+    --num_test_shards 512 \
+    --frac_test 0.1
+
+# 1. Create new dataset from LexicalScores annotated dataset
+# Any operation / filter can be applied to this dataset
+#
+python3 create_new_dataset.py \
+    --num_workers 30 \
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/1_Dropped/
+
+
+# 2. Create n partitions of raw huggingface wikipedia (we need this in case of limited RAM)
+#
+#
 python3 process_raw_to_shardable.py \
-    --dir /media/marcelbraasch/Data2/DroppedDataset/Raw/ \
-    -o /media/marcelbraasch/Data2/DroppedDataset/Split/
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/1_Dropped/ \
+    --o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/2_Split/ \
+    --splits 4
 
-2. Shard both partioned datasets one by one
-python3 shard_data.py \
-    --dir /media/marcelbraasch/Data2/DroppedDataset/Split/First/ \
-    -o /media/marcelbraasch/Data2/DroppedDataset/Shards/Shards_1/ \
-    --num_train_shards 1024 \
-    --num_test_shards 512 \
-    --frac_test 0.1
-python3 shard_data.py \
-    --dir /media/marcelbraasch/Data2/DroppedDataset/Split/Second/ \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2/ \
+
+# 3. Shard partions
+#
+#
+python3 shard_partitions.py \
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/2_Split/ \
+    --o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/3_Shards/ \
     --num_train_shards 1024 \
     --num_test_shards 512 \
     --frac_test 0.1
 
-3. Rename shards to unique names
+
+# 3. Rename shards to unique names
+#
+#
 python3 rename_files_in_shard.py \
-    --dir1 /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_1/ \
-    --dir2 /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2/ \
-    --num_train_shards 1024 \
-    --num_test_shards 512
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/3_Shards/
 
 ###### BUGGY DID BY HAND
 4. Move all shards to top folder and remove subfolders
@@ -46,9 +65,7 @@ sudo mv -r /data/Wikipedia/Shards/Shards_1/* /home/marcelbraasch/PycharmProjects
 sudo mv -r /data/Wikipedia/Shards/Shards_2/* /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/
 sudo rm -r /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_1
 sudo rm -r /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2
-
-
-5. Verify there are 2048 training and 1024 test files
+5. Verify there are 4096 training and 2048 test files
 ls -dq *test* | wc -l
 ls -dq *train* | wc -l
 
@@ -60,9 +77,9 @@ python merge_shards.py \
 
 7. Generate Samples
 python generate_samples.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MergedShards/ \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples/ \
-    --dup_factor 10 \
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/4_MergedShards/ \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/5_MaskedSamples/ \
+    --dup_factor 1 \
     --seed 42 \
     --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
     --do_lower_case 1 \
@@ -71,6 +88,23 @@ python generate_samples.py \
     --model_name bert-large-uncased \
     --max_predictions_per_seq 20 \
     --n_processes 29
+
+python3 prepare_data.py \
+    --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
+    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/ \
+    --num_workers 30 \
+    --ram_size 32 \
+    --num_train_shards 1024 \
+    --num_test_shards 512 \
+    --frac_test 0.1 \
+    --dup_factor 10 \
+    --seed 42 \
+    --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
+    --do_lower_case 1 \
+    --masked_lm_prob 0.15 \
+    --max_seq_length 128 \
+    --model_name bert-large-uncased \
+    --max_predictions_per_seq 20
 
 8. Move MaskedSamples to Internal SSD
 DO MANUALLY
