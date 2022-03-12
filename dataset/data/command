@@ -1,8 +1,6 @@
 cd PycharmProjects/academic-budget-bert/; source venv/bin/activate; cd dataset/data/;
 python3 prepare_data.py \
-    --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
-    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/ \
-    --save_data_dir /media/marcelbraasch/Data2 \
+    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/ \
     --num_workers 30 \
     --splits 2 \
     --num_train_shards 1024 \
@@ -11,7 +9,6 @@ python3 prepare_data.py \
     --dup_factor 10 \
     --seed 42 \
     --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
-    --do_lower_case 10 \
     --masked_lm_prob 0.15 \
     --max_seq_length 128 \
     --model_name bert-large-uncased \

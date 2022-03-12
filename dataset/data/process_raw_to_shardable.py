@@ -1,5 +1,5 @@
 import sys
-from datasets import load_from_disk
+from datasets import load_from_disk, load_dataset
 from tqdm import tqdm
 import datasets
 import os
@@ -31,7 +31,8 @@ def get_args():
 def process_wiki_from_disk():
 
     args = get_args()
-    wiki = load_from_disk(args.dir)
+    wiki = load_dataset("wikipedia", "20200501.en", split='train')
+    #wiki = wiki.shard(num_shards=1000, index=0) # For testing
     path = args.dir
     out = args.o
     splits = args.splits

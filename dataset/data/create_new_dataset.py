@@ -91,17 +91,17 @@ def create_new_dataset():
 
     args = get_args()
     wiki = load_wiki(args.dir)
-    wiki = wiki.shard(num_shards=60000, index=0)
-    n = len(wiki)
+    #wiki = wiki.shard(num_shards=60000, index=0)
+    #n = len(wiki)
     # wiki = wiki.sort("LexicalRatio")
-    wiki = wiki.map(filter_sentences)
-    wiki = wiki.filter(lambda example: not example['text'].startswith("Empty."))
+    #wiki = wiki.map(filter_sentences)
+    #wiki = wiki.filter(lambda example: not example['text'].startswith("Empty."))
     # wiki = wiki.add_column"("Index", range(n))
     # wiki = wiki.filter(lambda x: x["Index"] >= int(n*0.1), num_proc=args.num_workers)
     # s = {x[0]:x[1]["drop"]/(x[1]["drop"]+x[1]["keep"]) for x in tracker.items()}
     if not os.path.exists(args.o):
         os.mkdir(args.o)
-    wiki = wiki.shuffle(seed=42)
+    #wiki = wiki.shuffle(seed=42)
     wiki.save_to_disk(args.o)
 
 create_new_dataset()

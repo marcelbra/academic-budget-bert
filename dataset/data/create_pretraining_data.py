@@ -21,6 +21,7 @@ import argparse
 import collections
 import os
 import random
+import sys
 from io import open
 
 import h5py
@@ -108,7 +109,6 @@ def write_instance_to_example_file(
         features["segment_ids"][inst_index] = segment_ids
         features["masked_lm_positions"][inst_index] = masked_lm_positions
         features["masked_lm_ids"][inst_index] = masked_lm_ids
-
         if not no_nsp:
             features["next_sentence_labels"][inst_index] = 1 if instance.is_random_next else 0
 
@@ -130,6 +130,9 @@ def write_instance_to_example_file(
         #         "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
     print("saving data")
+    # path = "/".join(output_file.split("/")[:-1])
+    # if not os.path.exists(path):
+    #     os.mkdir(path)
     f = h5py.File(output_file, "w")
     f.create_dataset("input_ids", data=features["input_ids"], dtype="i4", compression="gzip")
     f.create_dataset("input_mask", data=features["input_mask"], dtype="i1", compression="gzip")
@@ -437,17 +440,40 @@ def create_instances_from_document(
 
 MaskedLmInstance = collections.namedtuple("MaskedLmInstance", ["index", "label"])
 
+def group_word_indices(tokens):
+    indices = []
+    current_index = []
+    for i, token in enumerate(tokens):
+        if token == "[CLS]" or token == "[SEP]":
+            continue
+        current_token = tokens[i]
+        next_token = tokens[i+1]
+        current_index.append(i)
+        if (not next_token.startswith("##")
+            or (current_token.startswith("##")
+                and not next_token.startswith("##"))
+        ):
+            indices.append(current_index)
+            current_index = []
+    return indices
+
+def flatten(l):
+    return [item for sublist in l for item in sublist]
 
 def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng):
     """Creates the predictions for the masked LM objective."""
 
-    cand_indexes = []
-    for (i, token) in enumerate(tokens):
-        if token == "[CLS]" or token == "[SEP]":
-            continue
-        cand_indexes.append(i)
+    # cand_indexes = []
+    # for (i, token) in enumerate(tokens):
+    #     if token == "[CLS]" or token == "[SEP]":
+    #         continue
+    #     cand_indexes.append(i)
+
+    cand_indexes = group_word_indices(tokens)
 
     rng.shuffle(cand_indexes)
+
+    cand_indexes = flatten(cand_indexes)
 
     output_tokens = list(tokens)
 
@@ -487,7 +513,6 @@ def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq
         masked_lm_labels.append(p.label)
 
     return (output_tokens, masked_lm_positions, masked_lm_labels)
-
 
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
@@ -635,7 +660,7 @@ def main():
     )
 
     output_file = args.output_file
-
+    # try:
     write_instance_to_example_file(
         instances,
         tokenizer,
@@ -644,6 +669,10 @@ def main():
         output_file,
         args.no_nsp,
     )
+    # except:
+    #     print("\n"*10)
+    #     print(args.input_file)
+    #     print("\n"*10)
 
 
 if __name__ == "__main__":

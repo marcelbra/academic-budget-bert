@@ -77,9 +77,9 @@ python merge_shards.py \
 
 7. Generate Samples
 python generate_samples.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/4_MergedShards/ \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/5_MaskedSamples/ \
-    --dup_factor 1 \
+    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/ShardsMerged/ \
+    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples/ \
+    --dup_factor 10 \
     --seed 42 \
     --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
     --do_lower_case 1 \
@@ -87,7 +87,7 @@ python generate_samples.py \
     --max_seq_length 128 \
     --model_name bert-large-uncased \
     --max_predictions_per_seq 20 \
-    --n_processes 29
+    --n_processes 24
 
 python3 prepare_data.py \
     --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
@@ -133,7 +133,7 @@ deepspeed run_pretraining.py \
   --adam_beta2 0.98 \
   --adam_eps 1e-6 \
   --total_training_time 24.0 \
-  --early_exit_time_marker 24.0 \
+  --early_exit_time_marker 12.0 \
   --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples \
   --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model/ \
   --print_steps 100 \

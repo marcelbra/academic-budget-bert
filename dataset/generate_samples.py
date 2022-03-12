@@ -88,7 +88,7 @@ if __name__ == "__main__":
         hdf5_preprocessing_cmd += (
             f" --bert_model={args.model_name}" if args.model_name is not None else ""
         )
-        hdf5_preprocessing_cmd += f" --do_lower_case" if args.do_lower_case else ""
+        #hdf5_preprocessing_cmd += f" --do_lower_case" if args.do_lower_case else ""
         hdf5_preprocessing_cmd += f" --max_seq_length={args.max_seq_length}"
         hdf5_preprocessing_cmd += f" --max_predictions_per_seq={args.max_predictions_per_seq}"
         hdf5_preprocessing_cmd += f" --masked_lm_prob={args.masked_lm_prob}"
