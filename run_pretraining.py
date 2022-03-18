@@ -547,22 +547,22 @@ def start_training(args, model, optimizer, lr_scheduler, start_epoch):
             break
 
         # save a checkpoint
-        # if (
-        #     index > 0
-        #     and args.num_epochs_between_checkpoints > 0
-        #     and index % args.num_epochs_between_checkpoints == 0
-        # ):
-        logger.info(f"Process rank - {dist.get_rank()} - attempting to save checkpoint")
-        save_training_checkpoint(
-            model,
-            model_path="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model ", #args.saved_model_path,
-            epoch=index + 1,
-            last_global_step=global_step,
-            last_global_data_samples=global_data_samples,
-            exp_start_marker=args.exp_start_marker,
-            ckpt_id=f"{index+1}",
-        )
-        dist.barrier()
+        if (
+            index > 0
+            and args.num_epochs_between_checkpoints > 0
+            and index % args.num_epochs_between_checkpoints == 0
+        ):
+            logger.info(f"Process rank - {dist.get_rank()} - attempting to save checkpoint")
+            save_training_checkpoint(
+                model,
+                model_path="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model ", #args.saved_model_path,
+                epoch=index + 1,
+                last_global_step=global_step,
+                last_global_data_samples=global_data_samples,
+                exp_start_marker=args.exp_start_marker,
+                ckpt_id=f"{index+1}",
+            )
+            dist.barrier()
     logger.info(
         "Training is complete or training limit has been reached.\
             Proceeding with checkpointing/validation"

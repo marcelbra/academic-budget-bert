@@ -14,102 +14,23 @@ df -h (entire machine)
 du --block-size=GB (directory)
 
 
-python3 prepare_data.py \
-    --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
-    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/ \
-    --num_workers 30 \
-    --ram_size 32 \
-    --num_train_shards 1024 \
-    --num_test_shards 512 \
-    --frac_test 0.1
-
-# 1. Create new dataset from LexicalScores annotated dataset
-# Any operation / filter can be applied to this dataset
-#
-python3 create_new_dataset.py \
-    --num_workers 30 \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/1_Dropped/
-
-
-# 2. Create n partitions of raw huggingface wikipedia (we need this in case of limited RAM)
-#
-#
-python3 process_raw_to_shardable.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/1_Dropped/ \
-    --o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/2_Split/ \
-    --splits 4
-
-
-# 3. Shard partions
-#
-#
-python3 shard_partitions.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/2_Split/ \
-    --o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/3_Shards/ \
-    --num_train_shards 1024 \
-    --num_test_shards 512 \
-    --frac_test 0.1
-
-
-# 3. Rename shards to unique names
-#
-#
-python3 rename_files_in_shard.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/3_Shards/
-
-###### BUGGY DID BY HAND
-4. Move all shards to top folder and remove subfolders
-sudo cd ~/PycharmProjects/academic-budget-bert/dataset
-sudo mv -r /data/Wikipedia/Shards/Shards_1/* /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/
-sudo mv -r /data/Wikipedia/Shards/Shards_2/* /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/
-sudo rm -r /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_1
-sudo rm -r /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/Shards_2
-5. Verify there are 4096 training and 2048 test files
-ls -dq *test* | wc -l
-ls -dq *train* | wc -l
-
-6. Merge shards to create lesser files
-python merge_shards.py \
-    --data /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/Shards/ \
-    --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MergedShards/ \
-    --ratio 4
-
-7. Generate Samples
-python generate_samples.py \
-    --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/ShardsMerged/ \
-    -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples/ \
-    --dup_factor 10 \
-    --seed 42 \
-    --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
-    --do_lower_case 1 \
-    --masked_lm_prob 0.15 \
-    --max_seq_length 128 \
-    --model_name bert-large-uncased \
-    --max_predictions_per_seq 20 \
-    --n_processes 24
+cd PycharmProjects/academic-budget-bert/; source venv/bin/activate; cd dataset/data/;
 
 python3 prepare_data.py \
-    --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores \
-    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/ \
-    --num_workers 30 \
-    --ram_size 32 \
+    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/ \
+    --num_workers 16 \
+    --splits 2 \
     --num_train_shards 1024 \
     --num_test_shards 512 \
     --frac_test 0.1 \
     --dup_factor 10 \
     --seed 42 \
     --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
-    --do_lower_case 1 \
     --masked_lm_prob 0.15 \
     --max_seq_length 128 \
     --model_name bert-large-uncased \
     --max_predictions_per_seq 20
 
-8. Move MaskedSamples to Internal SSD
-DO MANUALLY
-
-8. Run pretraining
 deepspeed run_pretraining.py \
   --model_type bert-mlm --tokenizer_name bert-large-uncased \
   --hidden_act gelu \
@@ -132,12 +53,12 @@ deepspeed run_pretraining.py \
   --adam_beta1 0.9 \
   --adam_beta2 0.98 \
   --adam_eps 1e-6 \
-  --total_training_time 24.0 \
-  --early_exit_time_marker 12.0 \
-  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/MaskedSamples \
+  --total_training_time 48.0 \
+  --early_exit_time_marker 24.0 \
+  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples \
   --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model/ \
   --print_steps 100 \
-  --num_epochs_between_checkpoints 10000 \
+  --num_epochs_between_checkpoints 10 \
   --job_name pretraining_experiment \
   --project_name budget-bert-pretraining \
   --validation_epochs 3 \
@@ -155,4 +76,8 @@ deepspeed run_pretraining.py \
   --seed 36 \
   --fp16
 
+
+
+
+run_pretraining.py --local_rank=0 --model_type bert-mlm --tokenizer_name bert-large-uncased --hidden_act gelu --hidden_size 1024 --num_hidden_layers 24 --num_attention_heads 16 --intermediate_size 4096 --hidden_dropout_prob 0.1 --attention_probs_dropout_prob 0.1 --encoder_ln_mode pre-ln --lr 1e-3 --train_batch_size 4096 --train_micro_batch_size_per_gpu 32 --lr_schedule time --curve linear --warmup_proportion 0.06 --gradient_clipping 0.0 --optimizer_type adamw --weight_decay 0.01 --adam_beta1 0.9 --adam_beta2 0.98 --adam_eps 1e-6 --total_training_time 48.0 --early_exit_time_marker 48.0 --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/masked_samples --output_dir /tmp/training-out --print_steps 100 --num_epochs_between_checkpoints 10000 --job_name pretraining_experiment --project_name budget-bert-pretraining --validation_epochs 3 --validation_epochs_begin 1 --validation_epochs_end 1 --validation_begin_proportion 0.05 --validation_end_proportion 0.01 --validation_micro_batch 16 --deepspeed --data_loader_type dist --do_validation --use_early_stopping --early_stop_time 180 --early_stop_eval_loss 6 --seed 40 --fp16
 

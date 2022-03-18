@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     # merge input directory shards into num_files_shard
     file_lines = []
-    f_idx = 0
+    f_idx = 192*3
     lines_idx = 0
     for f in tqdm(dataset_files, smoothing=1):
         with open(f) as fp:

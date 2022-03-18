@@ -105,7 +105,7 @@ def main():
               f"--num_train_shards {args.num_train_shards} " \
               f"--num_test_shards {args.num_test_shards} "
     os.system(command)
-    shutil.rmtree(f"{working_dir}/2_Split/")
+    #shutil.rmtree(f"{working_dir}/2_Split/")
 
     # 3. Rename shard, move to one folder and delete subfolders
     command = f"python3 rename_files_in_shard.py " \
@@ -116,26 +116,25 @@ def main():
     command = f"python3 ../merge_shards.py " \
               f"--data {working_dir}/3_Shards/ " \
               f"--output_dir {working_dir}/4_MergedShards/ " \
-              f"--ratio {args.splits*2} "
+              f"--ratio {2*2} "
     os.system(command)
-    shutil.rmtree(f"{working_dir}/3_Shards/")
+    #shutil.rmtree(f"{working_dir}/3_Shards/")
 
-    if True:
-        # 7. Generate Samples
-        command = f"python ../generate_samples.py " \
-                  f"--dir {working_dir}/4_MergedShards/ " \
-                  f"-o {working_dir}/5_MaskedSamples/ " \
-                  f"--dup_factor {args.dup_factor} " \
-                  f"--seed {args.seed} " \
-                  f"--vocab_file {args.vocab_file} " \
-                  f"--masked_lm_prob {args.masked_lm_prob} " \
-                  f"--max_seq_length {args.max_seq_length} " \
-                  f"--model_name {args.model_name} " \
-                  f"--max_predictions_per_seq {args.max_predictions_per_seq} " \
-                  f"--n_processes {args.num_workers} "
+    #     # 7. Generate Samples
+    command = f"python ../generate_samples.py " \
+              f"--dir {working_dir}/4_MergedShards/ " \
+              f"-o {working_dir}/5_MaskedSamples/ " \
+              f"--dup_factor {args.dup_factor} " \
+              f"--seed {args.seed} " \
+              f"--vocab_file {args.vocab_file} " \
+              f"--masked_lm_prob {args.masked_lm_prob} " \
+              f"--max_seq_length {args.max_seq_length} " \
+              f"--model_name {args.model_name} " \
+              f"--max_predictions_per_seq {args.max_predictions_per_seq} " \
+              f"--n_processes {args.num_workers} "
 
-        os.system(command)
-        shutil.rmtree(f"{working_dir}/4_MergedShards/")
+    os.system(command)
+    #shutil.rmtree(f"{working_dir}/4_MergedShards/")
     
 
     end = time()
