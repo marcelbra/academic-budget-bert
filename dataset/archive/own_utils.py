@@ -60,7 +60,7 @@ def compute_lexical_ratio():
 def plot_scores_and_lengths():
 
     data = []
-    with open("../scores_and_lengths.pkl", "rb") as f:
+    with open("scores_and_lengths.pkl", "rb") as f:
         data = pickle.load(f)
     _, lengths = data
     x, y, = scores, lengths

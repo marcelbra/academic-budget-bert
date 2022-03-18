@@ -41,7 +41,7 @@ def shard_partitions():
         input_name, output_name = f"{args.dir}{nr}", f"{args.o}{nr}"
         if not os.path.exists(output_name):
             os.mkdir(output_name)
-        command = f"python3 ../shard_data.py " \
+        command = f"python3 ./helper/shard_data.py " \
                   f"--dir {input_name} " \
                   f"-o {output_name} " \
                   f"--num_train_shards {args.num_train_shards} " \

@@ -19,7 +19,7 @@ import os
 from os import listdir
 from os.path import join
 
-from data import TextSharding
+import TextSharding
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         "-o", type=str, required=True, help="Output directory where the shard files will be written"
     )
     parser.add_argument(
-        "--num_train_shards", type=int, default=256, help="Number of model shards"
+        "--num_train_shards", type=int, default=256, help="Number of test shards"
     )
     parser.add_argument("--num_test_shards", type=int, default=256, help="Number of test shards")
     parser.add_argument(

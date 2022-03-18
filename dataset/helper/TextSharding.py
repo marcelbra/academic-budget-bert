@@ -36,7 +36,7 @@ class Sharding:
         self.input_files = input_files
 
         self.output_name_prefix = output_name_prefix
-        self.output_training_identifier = "model"
+        self.output_training_identifier = "training"
         self.output_test_identifier = "test"
         self.output_file_extension = ".txt"
 
@@ -204,7 +204,7 @@ class Sharding:
             if len(self.sentences[current_article_id]) > nominal_sentences_per_training_shard:
                 nominal_sentences_per_training_shard = len(self.sentences[current_article_id])
                 print(
-                    "Warning: A single article contains more than the nominal number of sentences per model shard."
+                    "Warning: A single article contains more than the nominal number of sentences per training shard."
                 )
 
         for file in self.output_test_files:

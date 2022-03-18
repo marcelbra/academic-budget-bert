@@ -47,7 +47,7 @@ def list_files_in_dir(dir, data_prefix=".txt", file_name_grep=""):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--helper", help="input directory with sharded text files", required=True)
+    parser.add_argument("--data", help="input directory with sharded text files", required=True)
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
     parser.add_argument(
         "--ratio",
@@ -63,7 +63,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    dataset_files = list_files_in_dir(args.data, file_name_grep=args.grep)
+
+    dataset_files = []
+    for subdirectory in list(os.walk(args.data))[0][1]:
+        dataset_files += list_files_in_dir(os.path.join(args.data, subdirectory),file_name_grep=args.grep)
     num_files = len(dataset_files)
     assert (
         num_files % args.ratio == 0
@@ -73,7 +76,7 @@ if __name__ == "__main__":
 
     # merge input directory shards into num_files_shard
     file_lines = []
-    f_idx = 192*3
+    f_idx = 0#192*3
     lines_idx = 0
     for f in tqdm(dataset_files, smoothing=1):
         with open(f) as fp:

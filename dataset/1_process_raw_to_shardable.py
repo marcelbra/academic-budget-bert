@@ -32,7 +32,7 @@ def process_wiki_from_disk():
 
     args = get_args()
     wiki = load_dataset("wikipedia", "20200501.en", split='train')
-    #wiki = wiki.shard(num_shards=1000, index=0) # For testing
+    wiki = wiki.shard(num_shards=1000, index=0) # For testing
     path = args.dir
     out = args.o
     splits = args.splits

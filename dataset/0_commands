@@ -16,16 +16,16 @@ free (free RAM)
 
 cd PycharmProjects/academic-budget-bert/; source venv/bin/activate; cd dataset/data/;
 
-python3 prepare_data.py \
-    --working_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/ \
+python3 0_prepare_data.py \
+    --working_dir ./data/ \
     --num_workers 16 \
     --splits 2 \
     --num_train_shards 1024 \
     --num_test_shards 512 \
     --frac_test 0.1 \
-    --dup_factor 10 \
+    --dup_factor 2 \
     --seed 42 \
-    --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
+    --vocab_file ./data/bert_large_uncased_vocab.txt \
     --masked_lm_prob 0.15 \
     --max_seq_length 128 \
     --model_name bert-large-uncased \

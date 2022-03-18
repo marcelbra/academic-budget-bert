@@ -96,7 +96,7 @@ def main():
     os.system(command)
     """
     python3 1_process_raw_to_shardable.py \
-    --dir ./data/1_Dataset/" \
+    --dir ./data/1_Dataset/ \
     -o ./data/2_Split/  \
     --splits 4
     """
@@ -121,19 +121,15 @@ def main():
     """
     #shutil.rmtree(f"{working_dir}/2_Split/")
 
-    # 3. Rename shard, move to one folder and delete subfolders
-    # command = f"python3 3_rename_files_in_shard.py " \
-    #           f"--dir {working_dir}/3_Shards/ "
-    # os.system(command)
 
     # 6. Merge shards to create lesser files
-    command = f"python3 ../merge_shards.py " \
+    command = f"python3 4_merge_shards.py " \
               f"--data {working_dir}/3_Shards/ " \
               f"--output_dir {working_dir}/4_MergedShards/ " \
               f"--ratio {2*2} "
     os.system(command)
     """
-    python3 ../merge_shards.py \
+    python3 4_merge_shards.py \
     --data ./data/3_Shards/ \
     --output_dir ./data/4_MergedShards/ \
     --ratio 4
@@ -141,9 +137,9 @@ def main():
     #shutil.rmtree(f"{working_dir}/3_Shards/")
 
     #     # 7. Generate Samples
-    command = f"python ../generate_samples.py " \
+    command = f"python 5_generate_samples.py " \
               f"--dir {working_dir}/4_MergedShards/ " \
-              f"-o {working_dir}/5_MaskedSamples/ " \
+              f"-o {working_dir}/5_MaskedSamplestest/ " \
               f"--dup_factor {args.dup_factor} " \
               f"--seed {args.seed} " \
               f"--vocab_file {args.vocab_file} " \
@@ -153,7 +149,7 @@ def main():
               f"--max_predictions_per_seq {args.max_predictions_per_seq} " \
               f"--n_processes {args.num_workers} "
     """
-    python ../generate_samples.py \
+    python 5_generate_samples.py \
     --dir ./data/4_MergedShards/ \
     -o ./data/5_MaskedSamples/ \
     --dup_factor 10 \
