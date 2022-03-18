@@ -148,7 +148,7 @@ steps = 20
 test = TestTargetLearning(model_name='bert-base-uncased', steps=steps)
 
 loss_for_words_1 = test.learn_target_word_single(data=batch)
-#loss_for_words_2 = test.learn_target_word_batch(data=batch)
+#loss_for_words_2 = test.learn_target_word_batch(helper=batch)
 loss_for_words_3 = test.learn_target_words(data=multiple_mask)
 comparison = pd.concat([loss_for_words_1, pd.Series([None]*steps), loss_for_words_3], axis=1)
 

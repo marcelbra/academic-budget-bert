@@ -38,7 +38,7 @@ class PretrainScriptParamsArguments:
     )
 
     local_rank: Optional[int] = field(
-        default=-1, metadata={"help": "local_rank for distributed training on gpus)"}
+        default=-1, metadata={"help": "local_rank for distributed model on gpus)"}
     )
 
     load_training_checkpoint: Optional[str] = field(
@@ -54,7 +54,7 @@ class PretrainScriptParamsArguments:
 
     num_epochs_between_checkpoints: Optional[int] = field(
         default=-1,
-        metadata={"help": "Number of epochs between a full checkpoint (used for pre-training)"},
+        metadata={"help": "Number of epochs between a full checkpoint (used for pre-model)"},
     )
 
     job_name: Optional[str] = field(
@@ -68,18 +68,18 @@ class PretrainScriptParamsArguments:
 
     max_steps: Optional[int] = field(
         default=9223372036854775807,
-        metadata={"help": "Maximum number of training steps of effective batch size to complete."},
+        metadata={"help": "Maximum number of model steps of effective batch size to complete."},
     )
 
     max_steps_per_epoch: Optional[int] = field(
         default=9223372036854775807,
         metadata={
-            "help": "Maximum number of training steps of effective batch size within an epoch to complete."
+            "help": "Maximum number of model steps of effective batch size within an epoch to complete."
         },
     )
 
     print_steps: Optional[int] = field(
-        default=100, metadata={"help": "Interval to print training details.)"}
+        default=100, metadata={"help": "Interval to print model details.)"}
     )
 
     do_validation: Optional[bool] = field(
@@ -101,11 +101,11 @@ class PretrainScriptParamsArguments:
     )
 
     validation_begin_proportion: Optional[float] = field(
-        default=0.1, metadata={"help": "how long does the first stage of training last?"}
+        default=0.1, metadata={"help": "how long does the first stage of model last?"}
     )
 
     validation_end_proportion: Optional[float] = field(
-        default=0.1, metadata={"help": "how long does the last stage of training last?"}
+        default=0.1, metadata={"help": "how long does the last stage of model last?"}
     )
 
     validation_micro_batch: Optional[int] = field(
@@ -122,11 +122,11 @@ class PretrainScriptParamsArguments:
     )
 
     early_exit_time_marker: Optional[float] = field(
-        default=24.0, metadata={"help": "Max hours for pre-training)"}
+        default=24.0, metadata={"help": "Max hours for pre-model)"}
     )
 
     total_training_time: Optional[float] = field(
-        default=24.0, metadata={"help": "Max hours for pre-training)"}
+        default=24.0, metadata={"help": "Max hours for pre-model)"}
     )
 
     finetune_time_markers: Optional[str] = field(
@@ -136,7 +136,7 @@ class PretrainScriptParamsArguments:
 
     finetune_checkpoint_at_end: Optional[bool] = field(
         default=True,
-        metadata={"help": "Save a finetuning checkpoint when training is done."},
+        metadata={"help": "Save a finetuning checkpoint when model is done."},
     )
 
     gradient_accumulation_steps: Optional[int] = field(
@@ -149,7 +149,7 @@ class PretrainScriptParamsArguments:
         default=32, metadata={"help": "train_micro_batch_size_per_gpu"}
     )
     num_epochs: Optional[int] = field(
-        default=1000000, metadata={"help": "Number of training epochs"}
+        default=1000000, metadata={"help": "Number of model epochs"}
     )
 
     lr: Optional[float] = field(default=0.011, metadata={"help": "lr"})

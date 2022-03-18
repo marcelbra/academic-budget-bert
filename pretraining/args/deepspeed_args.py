@@ -65,7 +65,7 @@ class DeepspeedArguments:
     )
 
     steps_per_print: Optional[int] = field(
-        default=100, metadata={"help": "Number of steps between training steps print"}
+        default=100, metadata={"help": "Number of steps between model steps print"}
     )
 
     wall_clock_breakdown: Optional[bool] = field(
@@ -80,7 +80,7 @@ class DeepspeedArguments:
         default=None, metadata={"help": "gradient predivide factor"}
     )
 
-    fp16: Optional[bool] = field(default=False, metadata={"help": "Enable FP16 training"})
+    fp16: Optional[bool] = field(default=False, metadata={"help": "Enable FP16 model"})
     fp16_backend: Optional[str] = field(
         default="ds",
         metadata={

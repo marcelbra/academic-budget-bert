@@ -36,7 +36,7 @@ class Sharding:
         self.input_files = input_files
 
         self.output_name_prefix = output_name_prefix
-        self.output_training_identifier = "training"
+        self.output_training_identifier = "model"
         self.output_test_identifier = "test"
         self.output_file_extension = ".txt"
 
@@ -69,7 +69,7 @@ class Sharding:
 
         assert (
             len(self.articles) is not 0
-        ), "Please check that input files are present and contain data."
+        ), "Please check that input files are present and contain helper."
 
         # TODO: WIP: multiprocessing (create independent ranges and spawn processes)
         use_multiprocessing = "serial"
@@ -128,10 +128,10 @@ class Sharding:
         print("Start: Init Output Files")
         assert (
             len(self.output_training_files) is 0
-        ), "Internal storage self.output_files already contains data. This function is intended to be used by the constructor only."
+        ), "Internal storage self.output_files already contains helper. This function is intended to be used by the constructor only."
         assert (
             len(self.output_test_files) is 0
-        ), "Internal storage self.output_files already contains data. This function is intended to be used by the constructor only."
+        ), "Internal storage self.output_files already contains helper. This function is intended to be used by the constructor only."
 
         for i in range(self.n_training_shards):
             name = (
@@ -164,7 +164,7 @@ class Sharding:
         print("Start: Distribute Articles Over Shards")
         assert (
             len(self.articles) >= self.n_training_shards + self.n_test_shards
-        ), "There are fewer articles than shards. Please add more data or reduce the number of shards requested."
+        ), "There are fewer articles than shards. Please add more helper or reduce the number of shards requested."
 
         # Create dictionary with - key: sentence count per article, value: article id number
         sentence_counts = defaultdict(lambda: [])
@@ -204,7 +204,7 @@ class Sharding:
             if len(self.sentences[current_article_id]) > nominal_sentences_per_training_shard:
                 nominal_sentences_per_training_shard = len(self.sentences[current_article_id])
                 print(
-                    "Warning: A single article contains more than the nominal number of sentences per training shard."
+                    "Warning: A single article contains more than the nominal number of sentences per model shard."
                 )
 
         for file in self.output_test_files:
@@ -325,7 +325,7 @@ class Sharding:
             training_median = statistics.median(training_counts)
             test_median = statistics.median(test_counts)
 
-            print("Distributing data over shards:", len(unused_article_set), "articles remaining.")
+            print("Distributing helper over shards:", len(unused_article_set), "articles remaining.")
 
         if len(unused_article_set) != 0:
             print("Warning: Some articles did not make it into output files.")

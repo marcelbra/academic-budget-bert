@@ -66,8 +66,8 @@ See `python merge_shards.py -h` for the full list of options.
 Example for merging randomly 2 shards into 1 shard:
 
 ```bash
-python merge_shards.py \
-    --data <path_to_shards_dir> \
+python 4_merge_shards.py \
+    --helper <path_to_shards_dir> \
     --output_dir <output_dir> \
     --ratio 2 
 ```
@@ -83,7 +83,7 @@ See `python generate_samples.py -h` for the full list of options.
 Example for generating shards with duplication factor 10, lowercasing the tokens, masked LM probability of 15%, max sequence length of 128, tokenizer by provided (Huggingface compatible) model named `bert-large-uncased`, max predictions per sample 20 and 16 parallel processes (for processing faster):
 
 ```bash
-python generate_samples.py \
+python 5_generate_samples.py \
     --dir <path_to_shards> \
     -o <output_path> \
     --dup_factor 10 \

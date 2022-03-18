@@ -1,7 +1,7 @@
 import os
 from random import shuffle
 
-path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples"
+path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/5_MaskedSamples"
 files = os.listdir(path)
 shuffle(files)
 n = len(files)

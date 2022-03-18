@@ -28,14 +28,14 @@ def process_wiki_from_disk():
         i += 1
 
 def compute_lexical_ratio():
-    print("Preparing data.")
-    wiki = load_from_disk("/media/marcelbraasch/Data/raw")["train"]
+    print("Preparing helper.")
+    wiki = load_from_disk("/media/marcelbraasch/data/raw")["train"]
     half = int(len(wiki)/2)
     c = 0
     nltk.download("punkt")
     tokenizer = nltk.tokenize.word_tokenize
     closed_class_words = []
-    with open("/dataset/data/closed_class_words.txt") as f:
+    with open("/dataset/helper/closed_class_words.txt") as f:
         for line in f:
             closed_class_words.extend(line.split())
 
@@ -53,7 +53,7 @@ def compute_lexical_ratio():
     print("Sorting.")
     wiki.sort("LexicalRatio")
     print("Saving.")
-    wiki.save_to_disk("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/LexicalScores")
+    wiki.save_to_disk("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/LexicalScores")
 
 
 
@@ -94,16 +94,16 @@ def plot_scores_and_lengths():
 
 
 def prepare_dataset():
-    path = "/dataset/data/Wikipedia/LexicalScores"
+    path = "/dataset/helper/Wikipedia/LexicalScores"
     wiki = load_from_disk(path)
     wiki = wiki.sort("LexicalRatio")
     drop_ratio = 0.15
     for article in tqdm(wiki):
         if c < half:
-            with open("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/wiki_for_24h_BERT_1.txt", mode="w") as ofile1:
+            with open("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/wiki_for_24h_BERT_1.txt", mode="w") as ofile1:
                 ofile1.write(article["text"].replace('\n', ' ') + "\n\n")
         else:
-            with open("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/wiki_for_24h_BERT_2.txt", mode="w") as ofile2:
+            with open("/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/wiki_for_24h_BERT_2.txt", mode="w") as ofile2:
                 ofile2.write(article["text"].replace('\n', ' ') + "\n\n")
         c += 1
     print("End writing.")
@@ -112,21 +112,21 @@ def prepare_dataset():
 def merge_shards():
     """
     Expects a (possibly recursively variably deep, in this case two) directory of
-    training and test shards and renames them according to a counter.
+    model and test shards and renames them according to a counter.
     """
-    files1 = os.listdir("~/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards_1_copy")
-    files2 = os.listdir("~/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards_2_copy")
+    files1 = os.listdir("/dataset/helper/Wikipedia/shards_1_copy")
+    files2 = os.listdir("/dataset/helper/Wikipedia/shards_2_copy")
     training_counter, test_counter = 0,0
     for file in files1 + files2:
-        if file.startswith("training"):
-            os.rename(file, f"training{training_counter}.txt")
+        if file.startswith("model"):
+            os.rename(file, f"model{training_counter}.txt")
             training_counter += 1
         else:
             os.rename(file, f"test{test_counter}.txt")
             test_counter += 1
 
 def rename_shards():
-    path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/masked_samples/"
+    path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/masked_samples/"
     files = os.listdir(path)
     for file in files:
         prefix = "train" if random() < 0.8 else "test"
@@ -134,7 +134,7 @@ def rename_shards():
         os.rename(path + file, path + f"{prefix}_shard_{new_name}")
 
 def avg_word_len_over_all_docs_distro():
-    path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/shards/"
+    path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/shards/"
     files = os.listdir(path)
     for file in tqdm(files):
         documents = []

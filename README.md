@@ -60,7 +60,7 @@ deepspeed run_pretraining.py \
   --total_training_time 24.0 \
   --early_exit_time_marker 24.0 \
   --dataset_path <dataset path> \
-  --output_dir /tmp/training-out \
+  --output_dir /tmp/model-out \
   --print_steps 100 \
   --num_epochs_between_checkpoints 10000 \
   --job_name pretraining_experiment \

@@ -21,19 +21,18 @@ import argparse
 import collections
 import os
 import random
-import sys
 from io import open
 
 import h5py
 import numpy as np
 from tqdm import tqdm
-from transformers import BertTokenizer
+from transformers import RobertaTokenizer
 
 from utils import convert_to_unicode
 
 
 class TrainingInstance(object):
-    """A single training instance (sentence pair)."""
+    """A single model instance (sentence pair)."""
 
     def __init__(self, tokens, segment_ids, masked_lm_positions, masked_lm_labels, is_random_next):
         self.tokens = tokens
@@ -109,6 +108,7 @@ def write_instance_to_example_file(
         features["segment_ids"][inst_index] = segment_ids
         features["masked_lm_positions"][inst_index] = masked_lm_positions
         features["masked_lm_ids"][inst_index] = masked_lm_ids
+
         if not no_nsp:
             features["next_sentence_labels"][inst_index] = 1 if instance.is_random_next else 0
 
@@ -129,10 +129,7 @@ def write_instance_to_example_file(
         #     tf.logging.info(
         #         "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
-    print("saving data")
-    # path = "/".join(output_file.split("/")[:-1])
-    # if not os.path.exists(path):
-    #     os.mkdir(path)
+    print("saving helper")
     f = h5py.File(output_file, "w")
     f.create_dataset("input_ids", data=features["input_ids"], dtype="i4", compression="gzip")
     f.create_dataset("input_mask", data=features["input_mask"], dtype="i1", compression="gzip")
@@ -192,9 +189,9 @@ def create_training_instances(
 
     # Remove empty documents
     all_documents = [x for x in all_documents if x]
-    rng.shuffle(all_documents) # TODO: remove
+    rng.shuffle(all_documents)
 
-    vocab_words = list(tokenizer.vocab.keys())
+    vocab_words = list(tokenizer.get_vocab().keys())
     instances = []
     for _ in range(dupe_factor):
         for document_index in range(len(all_documents)):
@@ -212,20 +209,14 @@ def create_training_instances(
                     )
                 )
             else:
-                instances.extend(
-                    create_instances_from_document(
-                        all_documents,
-                        document_index,
-                        max_seq_length,
-                        short_seq_prob,
-                        masked_lm_prob,
-                        max_predictions_per_seq,
-                        vocab_words,
-                        rng,
-                    )
-                )
+                print("Not supported")
+                exit()
+                # instances.extend(
+                #     create_instances_from_document(
+                #         all_documents, document_index, max_seq_length, short_seq_prob,
+                #         masked_lm_prob, max_predictions_per_seq, vocab_words, rng))
 
-    rng.shuffle(instances) # TODO: remove
+    rng.shuffle(instances)
     return instances
 
 
@@ -243,14 +234,14 @@ def create_instances_from_document_no_nsp(
     """Generate single sentences (NO 2nd segment for NSP task)"""
     document = all_documents[document_index]
 
-    # Account for [CLS], [SEP]
+    # Account for <s>, </s>
     max_num_tokens = max_seq_length - 2
 
     # We *usually* want to fill up the entire sequence since we are padding
     # to `max_seq_length` anyways, so short sequences are generally wasted
     # computation. However, we *sometimes*
     # (i.e., short_seq_prob == 0.1 == 10% of the time) want to use shorter
-    # sequences to minimize the mismatch between pre-training and fine-tuning.
+    # sequences to minimize the mismatch between pre-model and fine-tuning.
     # The `target_seq_length` is just a rough target however, whereas
     # `max_seq_length` is a hard limit.
     target_seq_length = max_num_tokens
@@ -282,13 +273,13 @@ def create_instances_from_document_no_nsp(
 
                 tokens = []
                 segment_ids = []
-                tokens.append("[CLS]")
+                tokens.append("<s>")
                 segment_ids.append(0)
                 for token in tokens_a:
                     tokens.append(token)
                     segment_ids.append(0)
 
-                tokens.append("[SEP]")
+                tokens.append("</s>")
                 segment_ids.append(0)
 
                 assert len(tokens) <= max_seq_length
@@ -331,7 +322,7 @@ def create_instances_from_document(
     # to `max_seq_length` anyways, so short sequences are generally wasted
     # computation. However, we *sometimes*
     # (i.e., short_seq_prob == 0.1 == 10% of the time) want to use shorter
-    # sequences to minimize the mismatch between pre-training and fine-tuning.
+    # sequences to minimize the mismatch between pre-model and fine-tuning.
     # The `target_seq_length` is just a rough target however, whereas
     # `max_seq_length` is a hard limit.
     target_seq_length = max_num_tokens
@@ -440,40 +431,17 @@ def create_instances_from_document(
 
 MaskedLmInstance = collections.namedtuple("MaskedLmInstance", ["index", "label"])
 
-def group_word_indices(tokens):
-    indices = []
-    current_index = []
-    for i, token in enumerate(tokens):
-        if token == "[CLS]" or token == "[SEP]":
-            continue
-        current_token = tokens[i]
-        next_token = tokens[i+1]
-        current_index.append(i)
-        if (not next_token.startswith("##")
-            or (current_token.startswith("##")
-                and not next_token.startswith("##"))
-        ):
-            indices.append(current_index)
-            current_index = []
-    return indices
-
-def flatten(l):
-    return [item for sublist in l for item in sublist]
 
 def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng):
     """Creates the predictions for the masked LM objective."""
 
-    # cand_indexes = []
-    # for (i, token) in enumerate(tokens):
-    #     if token == "[CLS]" or token == "[SEP]":
-    #         continue
-    #     cand_indexes.append(i)
-
-    cand_indexes = group_word_indices(tokens)
+    cand_indexes = []
+    for (i, token) in enumerate(tokens):
+        if token == "<s>" or token == "</s>":
+            continue
+        cand_indexes.append(i)
 
     rng.shuffle(cand_indexes)
-
-    cand_indexes = flatten(cand_indexes)
 
     output_tokens = list(tokens)
 
@@ -489,16 +457,17 @@ def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq
         covered_indexes.add(index)
 
         masked_token = None
-        # 80% of the time, replace with [MASK]
+        # 80% of the time, replace with <mask>
         if rng.random() < 0.8:
-            masked_token = "[MASK]"
+            masked_token = "<mask>"
         else:
             # 10% of the time, keep original
             if rng.random() < 0.5:
                 masked_token = tokens[index]
             # 10% of the time, replace with random word
             else:
-                masked_token = vocab_words[rng.randint(0, len(vocab_words) - 1)]
+                # choose an actual word instead of including tokenizer symbols
+                masked_token = vocab_words[rng.randint(3, len(vocab_words) - 2)]
 
         output_tokens[index] = masked_token
 
@@ -513,6 +482,7 @@ def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq
         masked_lm_labels.append(p.label)
 
     return (output_tokens, masked_lm_positions, masked_lm_labels)
+
 
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
@@ -552,13 +522,6 @@ def main():
     parser = argparse.ArgumentParser()
     ## Required parameters
     parser.add_argument(
-        "--vocab_file",
-        default=None,
-        type=str,
-        required=True,
-        help="The vocabulary the BERT model will train on.",
-    )
-    parser.add_argument(
         "--input_file",
         default=None,
         type=str,
@@ -578,7 +541,7 @@ def main():
     # str
     parser.add_argument(
         "--bert_model",
-        default="bert-large-uncased",
+        default="roberta-large",
         type=str,
         required=False,
         help="Bert pre-trained model selected in the list: bert-base-uncased, "
@@ -598,7 +561,7 @@ def main():
         "--dupe_factor",
         default=10,
         type=int,
-        help="Number of times to duplicate the input data (with different masks).",
+        help="Number of times to duplicate the input helper (with different masks).",
     )
     parser.add_argument(
         "--max_predictions_per_seq", default=20, type=int, help="Maximum sequence length."
@@ -632,7 +595,7 @@ def main():
 
     args = parser.parse_args()
 
-    tokenizer = BertTokenizer(args.vocab_file, do_lower_case=args.do_lower_case, max_len=512)
+    tokenizer = RobertaTokenizer.from_pretrained(args.bert_model, max_len=args.max_seq_length)
 
     input_files = []
     if os.path.isfile(args.input_file):
@@ -660,7 +623,7 @@ def main():
     )
 
     output_file = args.output_file
-    # try:
+
     write_instance_to_example_file(
         instances,
         tokenizer,
@@ -669,10 +632,6 @@ def main():
         output_file,
         args.no_nsp,
     )
-    # except:
-    #     print("\n"*10)
-    #     print(args.input_file)
-    #     print("\n"*10)
 
 
 if __name__ == "__main__":

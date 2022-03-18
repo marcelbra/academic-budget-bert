@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # for each shard -> call prepare_data.py  x duplicated factor
+    # for each shard -> call 0_prepare_data.py  x duplicated factor
 
     shard_files = list_files_in_dir(args.dir)
     # new_shards_output = os.path.join(args.o, "generated_hdf5_samples")

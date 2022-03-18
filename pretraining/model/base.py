@@ -21,9 +21,9 @@ import os
 
 from transformers import BertTokenizer, RobertaTokenizer
 
-from pretraining.configs import PretrainedBertConfig, PretrainedRobertaConfig
-from pretraining.modeling import BertForPreTraining, BertLMHeadModel
-from pretraining.utils import to_sanitized_dict
+from pretraining.training.configs import PretrainedBertConfig, PretrainedRobertaConfig
+from pretraining.training.modeling import BertForPreTraining, BertLMHeadModel
+from pretraining.training.utils import to_sanitized_dict
 
 logger = logging.getLogger(__name__)
 

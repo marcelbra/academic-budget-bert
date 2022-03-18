@@ -24,8 +24,8 @@ import random
 import sys
 from argparse import Namespace
 from pretraining.args.deepspeed_args import remove_cuda_compatibility_for_kernel_compilation
-from pretraining.modeling import BertForSequenceClassification
-from pretraining.configs import PretrainedBertConfig
+from pretraining.training.modeling import BertForSequenceClassification
+from pretraining.training.configs import PretrainedBertConfig
 from dataclasses import dataclass, field
 from typing import Optional
 import uuid
@@ -47,7 +47,7 @@ from transformers import (
     default_data_collator,
     set_seed,
 )
-from transformers.trainer_utils import SchedulerType, is_main_process
+from transformers.trainer_utils import is_main_process
 
 task_to_keys = {
     "cola": ("sentence", None),
@@ -67,7 +67,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DataTrainingArguments:
     """
-    Arguments pertaining to what data we are going to input our model for training and eval.
+    Arguments pertaining to what helper we are going to input our model for model and eval.
 
     Using `HfArgumentParser` we can turn this class
     into argparse arguments to be able to specify them on
@@ -96,10 +96,10 @@ class DataTrainingArguments:
         },
     )
     train_file: Optional[str] = field(
-        default=None, metadata={"help": "A csv or a json file containing the training data."}
+        default=None, metadata={"help": "A csv or a json file containing the model helper."}
     )
     validation_file: Optional[str] = field(
-        default=None, metadata={"help": "A csv or a json file containing the validation data."}
+        default=None, metadata={"help": "A csv or a json file containing the validation helper."}
     )
 
     def __post_init__(self):
@@ -110,7 +110,7 @@ class DataTrainingArguments:
                     "Unknown task, you should pick one in " + ",".join(task_to_keys.keys())
                 )
         elif self.train_file is None or self.validation_file is None:
-            raise ValueError("Need either a GLUE task or a training/validation file.")
+            raise ValueError("Need either a GLUE task or a model/validation file.")
         else:
             extension = self.train_file.split(".")[-1]
             assert extension in ["csv", "json"], "`train_file` should be a csv or a json file."
@@ -200,7 +200,7 @@ def main():
     # Log on each process the small summary:
     logger.warning(
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
-        + f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
+        + f"distributed model: {bool(training_args.local_rank != -1)}, 16-bits model: {training_args.fp16}"
     )
     # Set the verbosity to info of the Transformers logger (on main process only):
     if is_main_process(training_args.local_rank):
@@ -212,7 +212,7 @@ def main():
     # Set seed before initializing model.
     set_seed(training_args.seed)
 
-    # Get the datasets: you can either provide your own CSV/JSON training and evaluation files (see below)
+    # Get the datasets: you can either provide your own CSV/JSON model and evaluation files (see below)
     # or specify a GLUE benchmark task (the dataset will be downloaded automatically from the datasets Hub).
     #
     # For CSV/JSON files, this script will use as labels the column called 'label' and as pair of sentences the
@@ -222,7 +222,7 @@ def main():
     # If the CSVs/JSONs contain only one non-label column, the script does single sentence classification on this
     # single column. You can easily tweak this behavior (see below)
     #
-    # In distributed training, the load_dataset function guarantee that only one local process can concurrently
+    # In distributed model, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
     if data_args.task_name is not None:
         # Downloading and loading a dataset from the hub.
@@ -264,7 +264,7 @@ def main():
 
     # Load pretrained model and tokenizer
     #
-    # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
+    # In distributed model, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
 
     pretrain_run_args = json.load(open(f"{model_args.model_name_or_path}/args.json", "r"))
@@ -405,9 +405,9 @@ def main():
     if data_args.task_name is not None:
         test_dataset = datasets["test_matched" if data_args.task_name == "mnli" else "test"]
 
-    # Log a few random samples from the training set:
+    # Log a few random samples from the model set:
     for index in random.sample(range(len(train_dataset)), 3):
-        logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
+        logger.info(f"Sample {index} of the model set: {train_dataset[index]}.")
 
     # Get the metric function
     if data_args.task_name is not None:
@@ -469,7 +469,7 @@ def main():
         metric_to_monitor = metric_monitor[data_args.task_name]
         setattr(training_args, "metric_for_best_model", metric_to_monitor)
 
-    # Data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
+    # data collator will default to DataCollatorWithPadding, so we change it if we already did the padding.
     if data_args.pad_to_max_length:
         data_collator = default_data_collator
     elif training_args.fp16:

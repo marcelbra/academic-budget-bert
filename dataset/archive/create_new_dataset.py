@@ -12,13 +12,13 @@ def get_args():
     parser.add_argument(
         "--dir",
         type=str,
-        default="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/0_LexicalScores",
+        default="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/0_LexicalScores",
         help="Path to the raw dataset."
     )
     parser.add_argument(
         "-o",
         type=str,
-        default="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia_Test/1_Dropped",
+        default="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia_Test/1_Dropped",
         help="Output path to the raw dataset."
     )
     parser.add_argument(

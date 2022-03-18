@@ -47,7 +47,7 @@ def list_files_in_dir(dir, data_prefix=".txt", file_name_grep=""):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", help="input directory with sharded text files", required=True)
+    parser.add_argument("--helper", help="input directory with sharded text files", required=True)
     parser.add_argument("--output_dir", type=str, required=True, help="Output directory")
     parser.add_argument(
         "--ratio",

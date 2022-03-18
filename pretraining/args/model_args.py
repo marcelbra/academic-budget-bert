@@ -49,7 +49,7 @@ class ModelArguments:
         metadata={"help": "Where do you want to store the pretrained models downloaded from s3"},
     )
     pretrain_run_args: Optional[str] = field(
-        default=None, metadata={"help": "Pre-training run command (used by run_glue.py)"}
+        default=None, metadata={"help": "Pre-model run command (used by run_glue.py)"}
     )
 
 

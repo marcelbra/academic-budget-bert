@@ -89,28 +89,42 @@ def main():
         os.mkdir(working_dir)
 
     # 2. Create n partitions of raw huggingface wikipedia (we need this in case of limited RAM)
-    command = f"python3 process_raw_to_shardable.py " \
+    command = f"python3 1_process_raw_to_shardable.py " \
               f"--dir {working_dir}/1_Dataset/ " \
               f"-o {working_dir}/2_Split/ " \
               f"--splits {args.splits} "
     os.system(command)
+    """
+    python3 1_process_raw_to_shardable.py \
+    --dir ./data/1_Dataset/" \
+    -o ./data/2_Split/  \
+    --splits 4
+    """
     # shutil.rmtree(f"{working_dir}/1_Dropped/")
 
 
     # 3. Shard partions
-    command = f"python3 shard_partitions.py " \
+    command = f"python3 2_shard_partitions.py " \
               f"--dir {working_dir}/2_Split/ " \
               f"-o {working_dir}/3_Shards/ " \
               f"--frac_test {args.frac_test} " \
               f"--num_train_shards {args.num_train_shards} " \
               f"--num_test_shards {args.num_test_shards} "
     os.system(command)
+    """
+    python3 2_shard_partitions.py \
+    --dir ./data/2_Split/ \
+    -o ./data/3_Shards/ \
+    --frac_test 0.1 \
+    --num_train_shards 1024 \
+    --num_test_shards 512
+    """
     #shutil.rmtree(f"{working_dir}/2_Split/")
 
     # 3. Rename shard, move to one folder and delete subfolders
-    command = f"python3 rename_files_in_shard.py " \
-              f"--dir {working_dir}/3_Shards/ "
-    os.system(command)
+    # command = f"python3 3_rename_files_in_shard.py " \
+    #           f"--dir {working_dir}/3_Shards/ "
+    # os.system(command)
 
     # 6. Merge shards to create lesser files
     command = f"python3 ../merge_shards.py " \
@@ -118,6 +132,12 @@ def main():
               f"--output_dir {working_dir}/4_MergedShards/ " \
               f"--ratio {2*2} "
     os.system(command)
+    """
+    python3 ../merge_shards.py \
+    --data ./data/3_Shards/ \
+    --output_dir ./data/4_MergedShards/ \
+    --ratio 4
+    """
     #shutil.rmtree(f"{working_dir}/3_Shards/")
 
     #     # 7. Generate Samples
@@ -132,6 +152,19 @@ def main():
               f"--model_name {args.model_name} " \
               f"--max_predictions_per_seq {args.max_predictions_per_seq} " \
               f"--n_processes {args.num_workers} "
+    """
+    python ../generate_samples.py \
+    --dir ./data/4_MergedShards/ \
+    -o ./data/5_MaskedSamples/ \
+    --dup_factor 10 \
+    --seed 40 \
+    --vocab_file ./data/bert_large_uncased_vocab.txt \
+    --masked_lm_prob 0.15 \
+    --max_seq_length 128 \
+    --model_name bert-large-uncased \
+    --max_predictions_per_seq 20 \
+    --n_processes 32
+    """
 
     os.system(command)
     #shutil.rmtree(f"{working_dir}/4_MergedShards/")

@@ -18,7 +18,6 @@
 import json
 import logging
 import os
-import random
 import time
 from argparse import Namespace
 from pretraining.args.dataset_args import PreTrainDatasetArguments
@@ -27,14 +26,14 @@ from pretraining.args.model_args import ModelArguments, ModelConfigArguments
 from pretraining.args.optimizer_args import OptimizerArguments
 from pretraining.args.pretraining_args import PretrainScriptParamsArguments
 from pretraining.args.scheduler_args import SchedulerArgs
-from pretraining.base import BasePretrainModel
-from pretraining.dataset.distributed_pretraining_dataset import (
+from pretraining.training.base import BasePretrainModel
+from dataset.data.distributed_pretraining_dataset import (
     PreTrainingDataset as DistPreTrainingDataset,
 )
-from pretraining.dataset.pretraining_dataset import PreTrainingDataset, ValidationDataset
-from pretraining.optimizers import get_optimizer
-from pretraining.schedules import get_scheduler
-from pretraining.utils import (
+from dataset.data.pretraining_dataset import PreTrainingDataset, ValidationDataset
+from pretraining.training.optimizers import get_optimizer
+from pretraining.training.schedules import get_scheduler
+from pretraining.training.utils import (
     Logger,
     get_time_diff_hours,
     is_time_to_exit,
@@ -194,7 +193,7 @@ def train(
             unscaled_loss = total_loss.item()
             current_data_sample_count += args.train_micro_batch_size_per_gpu * dist.get_world_size()
 
-            # Prefetch training data
+            # Prefetch model helper
             pretrain_dataset_provider.prefetch_batch()
 
             model.network.backward(total_loss)
@@ -287,15 +286,15 @@ def should_run_validation(time_diff, args, epoch):
 
     should_do_validation = False
 
-    # is in first stage of training
+    # is in first stage of model
     if time_proportion < args.validation_begin_proportion:
         should_do_validation = epoch % args.validation_epochs_begin == 0
 
-    # is in last stage of training
+    # is in last stage of model
     elif time_proportion > 1 - args.validation_end_proportion:
         should_do_validation = epoch % args.validation_epochs_end == 0
 
-    # is in the middle stage of training
+    # is in the middle stage of model
     else:
         should_do_validation = epoch % args.validation_epochs == 0
 
@@ -320,7 +319,7 @@ def report_metrics(args, lr, loss, step, data_sample_count):
 
     if (step + 1) % args.print_steps == 0 and master_process(args):
         logger.info(
-            f"pre-training progress: step={step + 1}, loss={loss}, lr={current_lr}, sample_count={data_sample_count}"
+            f"pre-model progress: step={step + 1}, loss={loss}, lr={current_lr}, sample_count={data_sample_count}"
         )
 
 
@@ -400,7 +399,7 @@ def create_ds_config(args):
 
 
 def parse_arguments():
-    """Parse all the arguments needed for the training process"""
+    """Parse all the arguments needed for the model process"""
     args = get_arguments()
     set_seeds(args.seed)
     args.logger = logger
@@ -432,7 +431,7 @@ def prepare_optimizer_parameters(args, model):
 
 
 def prepare_model_and_optimizer(args):
-    # Load Pre-training Model skeleton + supplied model config
+    # Load Pre-model Model skeleton + supplied model config
     model = BasePretrainModel(args)
 
     # Optimizer parameters
@@ -538,10 +537,10 @@ def start_training(args, model, optimizer, lr_scheduler, start_epoch):
             else False
         )
 
-        # check if training reached a stopping point
+        # check if model reached a stopping point
         if is_time_to_exit(get_now(), args=args, global_steps=global_step) or should_early_stop:
             logger.info(
-                f"Warning: Early training termination due to max steps limit or time limit, \
+                f"Warning: Early model termination due to max steps limit or time limit, \
                     epoch={index}, global_step={global_step}"
             )
             break
@@ -555,7 +554,7 @@ def start_training(args, model, optimizer, lr_scheduler, start_epoch):
             logger.info(f"Process rank - {dist.get_rank()} - attempting to save checkpoint")
             save_training_checkpoint(
                 model,
-                model_path="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model ", #args.saved_model_path,
+                model_path="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Model ", #args.saved_model_path,
                 epoch=index + 1,
                 last_global_step=global_step,
                 last_global_data_samples=global_data_samples,
@@ -564,7 +563,7 @@ def start_training(args, model, optimizer, lr_scheduler, start_epoch):
             )
             dist.barrier()
     logger.info(
-        "Training is complete or training limit has been reached.\
+        "Training is complete or model limit has been reached.\
             Proceeding with checkpointing/validation"
     )
 
@@ -621,20 +620,20 @@ def save_training_checkpoint(
     **kwargs,
 ):
     """Utility function for checkpointing model + optimizer dictionaries
-    The main purpose for this is to be able to resume training from that instant again
+    The main purpose for this is to be able to resume model from that instant again
     """
     checkpoint_state_dict = {
         "epoch": epoch,
         "last_global_step": last_global_step,
         "last_global_data_samples": last_global_data_samples,
-        "exp_time_marker": get_now() - exp_start_marker,  ## save total training time in seconds
+        "exp_time_marker": get_now() - exp_start_marker,  ## save total model time in seconds
     }
     if _has_wandb and dist.get_rank() == 0:
         checkpoint_state_dict.update({"run_id": wandb.run.id})
     # Add extra kwargs too
     checkpoint_state_dict.update(kwargs)
 
-    status_msg = "checkpointing training model: PATH={}, ckpt_id={}".format(model_path, ckpt_id)
+    status_msg = "checkpointing model model: PATH={}, ckpt_id={}".format(model_path, ckpt_id)
     # save_checkpoint is DS method
     success = model.network.save_checkpoint(
         model_path, tag=ckpt_id, client_state=checkpoint_state_dict
@@ -648,7 +647,7 @@ def save_training_checkpoint(
 
 def load_training_checkpoint(model, model_path, ckpt_id):
     """Utility function for checkpointing model + optimizer dictionaries
-    The main purpose for this is to be able to resume training from that instant again
+    The main purpose for this is to be able to resume model from that instant again
     """
     _, checkpoint_state_dict = model.network.load_checkpoint(
         model_path, ckpt_id
@@ -667,7 +666,7 @@ def prepare_resuming_checkpoint(args, model):
     global global_data_samples
 
     logger.info(
-        f"Restoring previous training checkpoint from PATH={args.load_training_checkpoint}, \
+        f"Restoring previous model checkpoint from PATH={args.load_training_checkpoint}, \
             CKPT_ID={args.load_checkpoint_id}"
     )
     (
@@ -683,9 +682,9 @@ def prepare_resuming_checkpoint(args, model):
     )
     logger.info(
         f"The model is loaded from last checkpoint at epoch {start_epoch} when the global steps \
-            were at {global_step} and global data samples at {global_data_samples}"
+            were at {global_step} and global helper samples at {global_data_samples}"
     )
-    # adjust the time trained according to training clock
+    # adjust the time trained according to model clock
     args.exp_start_marker = get_now() - training_time_diff
 
     return start_epoch, wandb_run_id
@@ -700,7 +699,7 @@ def main():
     start_epoch = 0
     wandb_run_id = None
 
-    # Load a checkpoint if resuming training
+    # Load a checkpoint if resuming model
     if args.load_training_checkpoint is not None:
         start_epoch, wandb_run_id = prepare_resuming_checkpoint(args, model)
 

@@ -1,7 +1,7 @@
 import os
 import random
 
-path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples/"
+path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Wikipedia/5_MaskedSamples/"
 files = os.listdir(path)
 random.shuffle(files)
 n = len(files)
