@@ -18,7 +18,7 @@
 import logging
 import os
 import random
-from dataset.data.bert_dataset_provider import BertDatasetProviderInterface
+from dataset.helper.bert_dataset_provider import BertDatasetProviderInterface
 from concurrent.futures import ProcessPoolExecutor
 from enum import IntEnum
 

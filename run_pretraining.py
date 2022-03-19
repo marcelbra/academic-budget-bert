@@ -26,14 +26,12 @@ from pretraining.args.model_args import ModelArguments, ModelConfigArguments
 from pretraining.args.optimizer_args import OptimizerArguments
 from pretraining.args.pretraining_args import PretrainScriptParamsArguments
 from pretraining.args.scheduler_args import SchedulerArgs
-from pretraining.training.base import BasePretrainModel
-from dataset.data.distributed_pretraining_dataset import (
-    PreTrainingDataset as DistPreTrainingDataset,
-)
-from dataset.data.pretraining_dataset import PreTrainingDataset, ValidationDataset
-from pretraining.training.optimizers import get_optimizer
-from pretraining.training.schedules import get_scheduler
-from pretraining.training.utils import (
+from pretraining.model.base import BasePretrainModel
+from dataset.helper.distributed_pretraining_dataset import PreTrainingDataset as DistPreTrainingDataset
+from dataset.helper.pretraining_dataset import PreTrainingDataset, ValidationDataset
+from pretraining.model.optimizers import get_optimizer
+from pretraining.model.schedules import get_scheduler
+from pretraining.model.utils import (
     Logger,
     get_time_diff_hours,
     is_time_to_exit,
@@ -135,7 +133,7 @@ def create_finetune_job(args, index, global_step, model):
         checkpoint_id = f"epoch{index}_step{global_step}"
         model.save_weights(
             checkpoint_id=checkpoint_id,
-            output_dir=args.saved_model_path,
+            output_dir="../dataset/data/Model/",
             is_deepspeed=args.deepspeed,
         )
         logger.info("Saved fine-tuning job.")
@@ -552,15 +550,17 @@ def start_training(args, model, optimizer, lr_scheduler, start_epoch):
             and index % args.num_epochs_between_checkpoints == 0
         ):
             logger.info(f"Process rank - {dist.get_rank()} - attempting to save checkpoint")
-            save_training_checkpoint(
-                model,
-                model_path="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Model ", #args.saved_model_path,
-                epoch=index + 1,
-                last_global_step=global_step,
-                last_global_data_samples=global_data_samples,
-                exp_start_marker=args.exp_start_marker,
-                ckpt_id=f"{index+1}",
-            )
+            create_finetune_job(args, index, global_step, model)
+
+            # save_training_checkpoint(
+            #     model,
+            #     model_path="/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/helper/Model", #args.saved_model_path,
+            #     epoch=index + 1,
+            #     last_global_step=global_step,
+            #     last_global_data_samples=global_data_samples,
+            #     exp_start_marker=args.exp_start_marker,
+            #     ckpt_id=f"{index+1}",
+            # )
             dist.barrier()
     logger.info(
         "Training is complete or model limit has been reached.\
