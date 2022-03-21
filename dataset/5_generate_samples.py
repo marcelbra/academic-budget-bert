@@ -17,9 +17,10 @@ import argparse
 import logging
 import os
 import subprocess
+from multiprocessing import Manager, Process
+from helper.create_pretraining_data import create_pretraining_data
 
 logger = logging.getLogger()
-
 
 def list_files_in_dir(dir, data_prefix=".txt"):
     dataset_files = [
@@ -29,93 +30,56 @@ def list_files_in_dir(dir, data_prefix=".txt"):
     ]
     return dataset_files
 
-
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", type=str, required=True, help="Path to shards dataset")
     parser.add_argument("-o", type=str, required=True, help="Output directory")
-
     parser.add_argument("--dup_factor", type=int, default=1, help="sentence duplication factor")
     parser.add_argument("--seed", type=int, default=555)
     parser.add_argument("--vocab_file", type=str, help="vocab file")
-    parser.add_argument(
-        "--do_lower_case", type=int, default=1, help="lower case True = 1, False = 0"
-    )
-    parser.add_argument(
-        "--masked_lm_prob", type=float, help="Specify the probability for masked lm", default=0.15
-    )
-    parser.add_argument(
-        "--max_seq_length", type=int, help="Specify the maximum sequence length", default=512
-    )
-    parser.add_argument(
-        "--model_name",
-        type=str,
-        required=True,
-        help="Pre-trained models name (HF format): bert-base-uncased, "
-        "bert-large-uncased, bert-base-cased, roberta-base, roberta-large",
-    )
-
-    parser.add_argument(
-        "--max_predictions_per_seq",
-        type=int,
-        help="Specify the maximum number of masked words per sequence",
-        default=20,
-    )
+    parser.add_argument("--do_lower_case", type=int, default=1, help="lower case True = 1, False = 0")
+    parser.add_argument("--masked_lm_prob", type=float, help="Specify the probability for masked lm", default=0.15)
+    parser.add_argument("--max_seq_length", type=int, help="Specify the maximum sequence length", default=512)
+    parser.add_argument("--model_name", type=str, required=True, help="Pre-trained models name (HF format).")
+    parser.add_argument("--max_predictions_per_seq", type=int, help="Specify the maximum number of masked words per sequence", default=20)
     parser.add_argument("--n_processes", type=int, default=8, help="number of parallel processes")
-
     args = parser.parse_args()
 
-    # for each shard -> call 0_prepare_data.py  x duplicated factor
-
     shard_files = list_files_in_dir(args.dir)
-    # new_shards_output = os.path.join(args.o, "generated_hdf5_samples")
     new_shards_output = args.o
     os.makedirs(new_shards_output, exist_ok=True)
-
     logger.info("Creating new hdf5 files ...")
 
     def create_shard(f_path, shard_idx, set_group, args):
-        output_filename = os.path.join(new_shards_output, f"{set_group}_shard_{shard_idx}.hdf5")
-        if "roberta" in args.model_name:
-            hdf5_preprocessing_cmd = "python ./helper/create_pretraining_data_roberta.py"
-        else:
-            hdf5_preprocessing_cmd = "python ./helper/create_pretraining_data.py"
-        hdf5_preprocessing_cmd += f" --input_file={f_path}"
-        hdf5_preprocessing_cmd += f" --output_file={output_filename}"
-        hdf5_preprocessing_cmd += (
-            f" --vocab_file={args.vocab_file}" if args.vocab_file is not None else ""
-        )
-        hdf5_preprocessing_cmd += (
-            f" --bert_model={args.model_name}" if args.model_name is not None else ""
-        )
-        #hdf5_preprocessing_cmd += f" --do_lower_case" if args.do_lower_case else ""
-        hdf5_preprocessing_cmd += f" --max_seq_length={args.max_seq_length}"
-        hdf5_preprocessing_cmd += f" --max_predictions_per_seq={args.max_predictions_per_seq}"
-        hdf5_preprocessing_cmd += f" --masked_lm_prob={args.masked_lm_prob}"
-        hdf5_preprocessing_cmd += f" --random_seed={args.seed + shard_idx}"
-        hdf5_preprocessing_cmd += f" --dupe_factor=1"
-        hdf5_preprocessing_cmd += f" --no_nsp"
+        create_pretraining_data(vocab_file=args.vocab_file if args.vocab_file is not None else "",
+                                input_file=f_path,
+                                output_file=os.path.join(new_shards_output, f"{set_group}_shard_{shard_idx}.hdf5"),
+                                bert_model=args.model_name if args.model_name is not None else "",
+                                no_nsp=True,
+                                max_seq_length=args.max_seq_length,
+                                dupe_factor=1,
+                                max_predictions_per_seq=args.max_predictions_per_seq,
+                                masked_lm_prob=args.masked_lm_prob,
+                                short_seq_prob=0.1,
+                                do_lower_case=args.do_lower_case,
+                                random_seed=args.seed + shard_idx)
 
-        bert_preprocessing_process = subprocess.Popen(hdf5_preprocessing_cmd, shell=True)
+    manager = Manager()
+    d = manager.dict()
 
-        last_process = bert_preprocessing_process
+    def chunk(lst, n):
+        for i in range(0, len(lst), n):
+            yield lst[i:i + n]
 
-        # This could be better optimized (fine if all take equal time)
-        if shard_idx % args.n_processes == 0 and shard_idx > 0:
-            bert_preprocessing_process.wait()
-        return last_process
-
-    last_process = None
-    shard_idx = {"train": 0, "test": 0}
+    counter = 0
     for dup_idx in range(args.dup_factor):
-
-
-
-        for f in shard_files:
-            file_name = os.path.basename(f)
-            set_group = "train" if "train" in file_name else "test"
-            last_process = create_shard(f, shard_idx[set_group], set_group, args)
-            shard_idx[set_group] += 1
-
-
-    last_process.wait()
+        for files in chunk(shard_files, args.n_processes):
+            processes = []
+            for f in files:
+                p = Process(target=create_shard, args=(f, counter, "train", args,))
+                counter += 1
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()

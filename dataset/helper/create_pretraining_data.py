@@ -440,7 +440,7 @@ def create_instances_from_document(
 
 MaskedLmInstance = collections.namedtuple("MaskedLmInstance", ["index", "label"])
 
-def group_word_indices(tokens):
+def wwm(tokens):
     indices = []
     current_index = []
     for i, token in enumerate(tokens):
@@ -457,29 +457,55 @@ def group_word_indices(tokens):
             current_index = []
     return indices
 
+def pmi_masking(indices, tokens, data, single):
+    cooccurence_n = 152881663068
+    word_freq_n = 2905788917
+    new_indices = []
+    while indices:
+        # Select a random word and remove it from selection
+        current_indices = random.choice(indices)
+        first_word = ""
+        for index in current_indices:
+            curr_token = tokens[index]
+            curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
+            first_word += curr_token
+        indices.remove(current_indices)
+        # For each other token, check pmi and get the best 2nd word
+        best_pmi = float("-inf")
+        best_second_word = ""
+        best_indexes = None
+        for indexes in indices:
+            # Grab 2nd word
+            second_word = ""
+            for index in indexes:
+                curr_token = tokens[index]
+                curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
+                second_word += curr_token
+            cooccurence_prob = data[frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
+            first_prob = single[first_word] + 1e-6
+            second_prob = single[second_word] + 1e-6
+            final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
+            if final_pmi > best_pmi:
+                best_pmi = final_pmi
+                best_second_word = second_word
+                best_indexes = indexes
+        indices.remove(best_indexes)
+        new_indices.append(current_indices)
+        new_indices.append(best_indexes)
+    return new_indices
+
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
 def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng):
     """Creates the predictions for the masked LM objective."""
 
-    # cand_indexes = []
-    # for (i, token) in enumerate(tokens):
-    #     if token == "[CLS]" or token == "[SEP]":
-    #         continue
-    #     cand_indexes.append(i)
-
-    cand_indexes = group_word_indices(tokens)
-    print(cand_indexes)
-    print(tokens)
-    print("\n"*10)
-
-    rng.shuffle(cand_indexes)
-
+    cand_indexes = wwm(tokens)
+    #cand_indexes = pmi_masking(cand_indexes, tokens, data=cooccurence, single=word_freq)
+    #rng.shuffle(cand_indexes)
     cand_indexes = flatten(cand_indexes)
 
     output_tokens = list(tokens)
-
     num_to_predict = min(max_predictions_per_seq, max(1, int(round(len(tokens) * masked_lm_prob))))
 
     masked_lms = []
@@ -549,91 +575,135 @@ def truncate_single_seq(tokens, max_num_tokens, rng):
         else:
             tokens.pop()
 
+def create_pretraining_data(vocab_file, input_file, output_file, bert_model, no_nsp,
+                            max_seq_length, dupe_factor, max_predictions_per_seq,
+                            masked_lm_prob, short_seq_prob, do_lower_case, random_seed
+                            ):
+
+    tokenizer = BertTokenizer(vocab_file, do_lower_case=do_lower_case, max_len=512)
+
+    input_files = []
+    if os.path.isfile(input_file):
+        input_files.append(input_file)
+    elif os.path.isdir(input_file):
+        input_files = [
+            os.path.join(input_file, f)
+            for f in os.listdir(input_file)
+            if (os.path.isfile(os.path.join(input_file, f)) and f.endswith(".txt"))
+        ]
+    else:
+        raise ValueError("{} is not a valid path".format(input_file))
+
+    rng = random.Random(random_seed)
+    instances = create_training_instances(
+        input_files,
+        tokenizer,
+        max_seq_length,
+        dupe_factor,
+        short_seq_prob,
+        masked_lm_prob,
+        max_predictions_per_seq,
+        rng,
+        no_nsp,
+    )
+
+    output_file = output_file
+    # try:
+    write_instance_to_example_file(
+        instances,
+        tokenizer,
+        max_seq_length,
+        max_predictions_per_seq,
+        output_file,
+        no_nsp,
+    )
+
 
 def main():
 
-    parser = argparse.ArgumentParser()
-    ## Required parameters
-    parser.add_argument(
-        "--vocab_file",
-        default=None,
-        type=str,
-        required=True,
-        help="The vocabulary the BERT model will train on.",
-    )
-    parser.add_argument(
-        "--input_file",
-        default=None,
-        type=str,
-        required=True,
-        help="The input train corpus. can be directory with .txt files or a path to a single file",
-    )
-    parser.add_argument(
-        "--output_file",
-        default=None,
-        type=str,
-        required=True,
-        help="The output file where the model checkpoints will be written.",
-    )
+    if True:
+        parser = argparse.ArgumentParser()
+        ## Required parameters
+        parser.add_argument(
+            "--vocab_file",
+            default=None,
+            type=str,
+            required=True,
+            help="The vocabulary the BERT model will train on.",
+        )
+        parser.add_argument(
+            "--input_file",
+            default=None,
+            type=str,
+            required=True,
+            help="The input train corpus. can be directory with .txt files or a path to a single file",
+        )
+        parser.add_argument(
+            "--output_file",
+            default=None,
+            type=str,
+            required=True,
+            help="The output file where the model checkpoints will be written.",
+        )
 
-    ## Other parameters
+        ## Other parameters
 
-    # str
-    parser.add_argument(
-        "--bert_model",
-        default="bert-large-uncased",
-        type=str,
-        required=False,
-        help="Bert pre-trained model selected in the list: bert-base-uncased, "
-        "bert-large-uncased, bert-base-cased, bert-base-multilingual, bert-base-chinese.",
-    )
+        # str
+        parser.add_argument(
+            "--bert_model",
+            default="bert-large-uncased",
+            type=str,
+            required=False,
+            help="Bert pre-trained model selected in the list: bert-base-uncased, "
+            "bert-large-uncased, bert-base-cased, bert-base-multilingual, bert-base-chinese.",
+        )
 
-    # int
-    parser.add_argument(
-        "--max_seq_length",
-        default=128,
-        type=int,
-        help="The maximum total input sequence length after WordPiece tokenization. \n"
-        "Sequences longer than this will be truncated, and sequences shorter \n"
-        "than this will be padded.",
-    )
-    parser.add_argument(
-        "--dupe_factor",
-        default=10,
-        type=int,
-        help="Number of times to duplicate the input helper (with different masks).",
-    )
-    parser.add_argument(
-        "--max_predictions_per_seq", default=20, type=int, help="Maximum sequence length."
-    )
+        # int
+        parser.add_argument(
+            "--max_seq_length",
+            default=128,
+            type=int,
+            help="The maximum total input sequence length after WordPiece tokenization. \n"
+            "Sequences longer than this will be truncated, and sequences shorter \n"
+            "than this will be padded.",
+        )
+        parser.add_argument(
+            "--dupe_factor",
+            default=10,
+            type=int,
+            help="Number of times to duplicate the input helper (with different masks).",
+        )
+        parser.add_argument(
+            "--max_predictions_per_seq", default=20, type=int, help="Maximum sequence length."
+        )
 
-    # floats
+        # floats
 
-    parser.add_argument("--masked_lm_prob", default=0.15, type=float, help="Masked LM probability.")
+        parser.add_argument("--masked_lm_prob", default=0.15, type=float, help="Masked LM probability.")
 
-    parser.add_argument(
-        "--short_seq_prob",
-        default=0.1,
-        type=float,
-        help="Probability to create a sequence shorter than maximum sequence length",
-    )
+        parser.add_argument(
+            "--short_seq_prob",
+            default=0.1,
+            type=float,
+            help="Probability to create a sequence shorter than maximum sequence length",
+        )
 
-    parser.add_argument(
-        "--do_lower_case",
-        action="store_true",
-        default=True,
-        help="Whether to lower case the input text. True for uncased models, False for cased models.",
-    )
-    parser.add_argument(
-        "--random_seed", type=int, default=12345, help="random seed for initialization"
-    )
-    parser.add_argument(
-        "--no_nsp",
-        action="store_true",
-        help="Generate samples without 2nd sentence segments (no NSP task)",
-    )
+        parser.add_argument(
+            "--do_lower_case",
+            action="store_true",
+            default=True,
+            help="Whether to lower case the input text. True for uncased models, False for cased models.",
+        )
+        parser.add_argument(
+            "--random_seed", type=int, default=12345, help="random seed for initialization"
+        )
+        parser.add_argument(
+            "--no_nsp",
+            action="store_true",
+            help="Generate samples without 2nd sentence segments (no NSP task)",
+        )
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
     tokenizer = BertTokenizer(args.vocab_file, do_lower_case=args.do_lower_case, max_len=512)
 

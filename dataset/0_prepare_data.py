@@ -114,10 +114,10 @@ def main():
     """
     python3 2_shard_partitions.py \
     --dir ./data/2_Split/ \
-    -o ./data/3_Shards/ \
+    -o /mounts/data/proj/braasch/3_Shards \
     --frac_test 0.1 \
-    --num_train_shards 1024 \
-    --num_test_shards 512
+    --num_train_shards 4096 \
+    --num_test_shards 2048
     """
     #shutil.rmtree(f"{working_dir}/2_Split/")
 

@@ -19,7 +19,7 @@ cd PycharmProjects/academic-budget-bert/; source venv/bin/activate; cd dataset/d
 python3 0_prepare_data.py \
     --working_dir ./data/ \
     --num_workers 16 \
-    --splits 2 \
+    --splits 1 \
     --num_train_shards 1024 \
     --num_test_shards 512 \
     --frac_test 0.1 \
