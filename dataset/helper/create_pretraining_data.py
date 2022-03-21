@@ -470,6 +470,9 @@ def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq
     #     cand_indexes.append(i)
 
     cand_indexes = group_word_indices(tokens)
+    print(cand_indexes)
+    print(tokens)
+    print("\n"*10)
 
     rng.shuffle(cand_indexes)
 

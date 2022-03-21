@@ -93,3 +93,10 @@ python run_glue.py \
   --num_train_epochs 5 \
   --lr_scheduler_type polynomial \
   --warmup_steps 50
+
+python3 ./helper/shard_data.py \
+    --dir ~/academic-budget-bert/dataset/data/2_Split/0 \
+    -o /home/data \
+    --num_train_shards {args.num_train_shards} \
+    --num_test_shards {args.num_test_shards} \
+    --frac_test {args.frac_test}

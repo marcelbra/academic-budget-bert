@@ -93,7 +93,9 @@ class BasePretrainModel(object):
         checkpoint_dir = os.path.join(output_dir, checkpoint_id)
         logger.info("checkpointing: PATH={}".format(checkpoint_dir))
         os.makedirs(checkpoint_dir, exist_ok=True)
-
+        print()
+        print("checkpoint_dir:", checkpoint_dir)
+        print()
         if is_deepspeed:
             # deepspeed save method
             self.network.module.save_pretrained(checkpoint_dir)

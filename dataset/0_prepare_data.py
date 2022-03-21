@@ -130,9 +130,9 @@ def main():
     os.system(command)
     """
     python3 4_merge_shards.py \
-    --data ./data/3_Shards/ \
-    --output_dir ./data/4_MergedShards/ \
-    --ratio 4
+    --data /mounts/data/proj/braasch/3_shards \
+    --output_dir /mounts/data/proj/braasch/4_MergedShards/ \
+    --ratio 6
     """
     #shutil.rmtree(f"{working_dir}/3_Shards/")
 
@@ -149,17 +149,17 @@ def main():
               f"--max_predictions_per_seq {args.max_predictions_per_seq} " \
               f"--n_processes {args.num_workers} "
     """
-    python 5_generate_samples.py \
-    --dir ./data/4_MergedShards/ \
-    -o ./data/5_MaskedSamples/ \
+    python3 5_generate_samples.py \
+    --dir /mounts/data/proj/braasch/4_MergedShards/ \
+    -o /mounts/data/proj/braasch/5_MaskedSamples/ \
     --dup_factor 10 \
     --seed 40 \
-    --vocab_file ./data/bert_large_uncased_vocab.txt \
+    --vocab_file ~/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
     --masked_lm_prob 0.15 \
     --max_seq_length 128 \
     --model_name bert-large-uncased \
     --max_predictions_per_seq 20 \
-    --n_processes 32
+    --n_processes 64
     """
 
     os.system(command)
