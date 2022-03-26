@@ -76,8 +76,8 @@ if __name__ == "__main__":
     cooc_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/cooccurence.pickle"
     word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/vocab.pickle"
     manager = Manager()
-    coocurence = defaultdict(int)#open_with_pickle(cooc_path)
-    word_probs = defaultdict(int)#open_with_pickle(word_path)
+    coocurence = open_with_pickle(cooc_path)
+    word_probs = open_with_pickle(word_path)
     cooccurence = manager.dict(coocurence)
     word_probs = manager.dict(word_probs)
 
@@ -110,7 +110,7 @@ python3 5_generate_samples.py \
 --max_seq_length 128 \
 --model_name bert-large-uncased \
 --max_predictions_per_seq 20 \
---n_processes 60
+--n_processes 64
 
 MY MACHINE
 python3 5_generate_samples.py \
