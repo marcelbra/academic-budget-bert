@@ -19,6 +19,9 @@ import os
 import subprocess
 from multiprocessing import Manager, Process
 from helper.create_pretraining_data import create_pretraining_data
+import pickle5 as pickle
+from collections import defaultdict
+
 
 logger = logging.getLogger()
 
@@ -29,6 +32,10 @@ def list_files_in_dir(dir, data_prefix=".txt"):
         if os.path.isfile(os.path.join(dir, f)) and data_prefix in f
     ]
     return dataset_files
+
+def open_with_pickle(path):
+    with open(path, "rb") as handle:
+        return pickle.load(handle)
 
 if __name__ == "__main__":
 
@@ -51,7 +58,7 @@ if __name__ == "__main__":
     os.makedirs(new_shards_output, exist_ok=True)
     logger.info("Creating new hdf5 files ...")
 
-    def create_shard(f_path, shard_idx, set_group, args):
+    def create_shard(f_path, shard_idx, set_group, args, information):
         create_pretraining_data(vocab_file=args.vocab_file if args.vocab_file is not None else "",
                                 input_file=f_path,
                                 output_file=os.path.join(new_shards_output, f"{set_group}_shard_{shard_idx}.hdf5"),
@@ -63,10 +70,16 @@ if __name__ == "__main__":
                                 masked_lm_prob=args.masked_lm_prob,
                                 short_seq_prob=0.1,
                                 do_lower_case=args.do_lower_case,
-                                random_seed=args.seed + shard_idx)
+                                random_seed=args.seed + shard_idx,
+                                information=information)
 
+    cooc_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/cooccurence.pickle"
+    word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/vocab.pickle"
     manager = Manager()
-    d = manager.dict()
+    coocurence = defaultdict(int)#open_with_pickle(cooc_path)
+    word_probs = defaultdict(int)#open_with_pickle(word_path)
+    cooccurence = manager.dict(coocurence)
+    word_probs = manager.dict(word_probs)
 
     def chunk(lst, n):
         for i in range(0, len(lst), n):
@@ -77,9 +90,24 @@ if __name__ == "__main__":
         for files in chunk(shard_files, args.n_processes):
             processes = []
             for f in files:
-                p = Process(target=create_shard, args=(f, counter, "train", args,))
+                p = Process(target=create_shard, args=(f, counter, "train", args, [cooccurence, word_probs]))
                 counter += 1
                 p.start()
                 processes.append(p)
             for p in processes:
                 p.join()
+
+
+"""
+python3 5_generate_samples.py \
+--dir ./data/Wikipedia/4_MergedShards/ \
+-o ./data/Wikipedia/5_MaskedSamples/ \
+--dup_factor 10 \
+--seed 40 \
+--vocab_file ./data/bert_large_uncased_vocab.txt \
+--masked_lm_prob 0.15 \
+--max_seq_length 128 \
+--model_name bert-large-uncased \
+--max_predictions_per_seq 20 \
+--n_processes 30
+"""

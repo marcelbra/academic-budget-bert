@@ -28,9 +28,27 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 from transformers import BertTokenizer
+import six
 
-from utils import convert_to_unicode
-
+# from dataset.helper.utils import convert_to_unicode
+def convert_to_unicode(text):
+    """Converts `text` to Unicode (if it's not already), assuming utf-8 input."""
+    if six.PY3:
+        if isinstance(text, str):
+            return text
+        elif isinstance(text, bytes):
+            return text.decode("utf-8", "ignore")
+        else:
+            raise ValueError("Unsupported string type: %s" % (type(text)))
+    elif six.PY2:
+        if isinstance(text, str):
+            return text.decode("utf-8", "ignore")
+        elif isinstance(text, unicode):
+            return text
+        else:
+            raise ValueError("Unsupported string type: %s" % (type(text)))
+    else:
+        raise ValueError("Not running on Python2 or Python 3?")
 
 class TrainingInstance(object):
     """A single model instance (sentence pair)."""
@@ -57,7 +75,6 @@ class TrainingInstance(object):
 
     # def __repr__(self):
     #   return self.__str__()
-
 
 def write_instance_to_example_file(
     instances, tokenizer, max_seq_length, max_predictions_per_seq, output_file, no_nsp
@@ -153,7 +170,6 @@ def write_instance_to_example_file(
     f.flush()
     f.close()
 
-
 def create_training_instances(
     input_files,
     tokenizer,
@@ -164,6 +180,7 @@ def create_training_instances(
     max_predictions_per_seq,
     rng,
     no_nsp,
+    information
 ):
     """Create `TrainingInstance`s from raw text."""
     all_documents = [[]]
@@ -209,6 +226,7 @@ def create_training_instances(
                         max_predictions_per_seq,
                         vocab_words,
                         rng,
+                        information
                     )
                 )
             else:
@@ -238,6 +256,7 @@ def create_instances_from_document_no_nsp(
     max_predictions_per_seq,
     vocab_words,
     rng,
+    information
 ):
     """Creates `TrainingInstance`s for a single document."""
     """Generate single sentences (NO 2nd segment for NSP task)"""
@@ -294,7 +313,7 @@ def create_instances_from_document_no_nsp(
                 assert len(tokens) <= max_seq_length
 
                 (tokens, masked_lm_positions, masked_lm_labels) = create_masked_lm_predictions(
-                    tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng
+                    tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng, information
                 )
                 instance = TrainingInstance(
                     tokens=tokens,
@@ -481,9 +500,9 @@ def pmi_masking(indices, tokens, data, single):
                 curr_token = tokens[index]
                 curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
                 second_word += curr_token
-            cooccurence_prob = data[frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
-            first_prob = single[first_word] + 1e-6
-            second_prob = single[second_word] + 1e-6
+            cooccurence_prob = information[0][frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
+            first_prob = information[1][first_word] + 1e-6
+            second_prob = information[1][second_word] + 1e-6
             final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
             if final_pmi > best_pmi:
                 best_pmi = final_pmi
@@ -497,14 +516,14 @@ def pmi_masking(indices, tokens, data, single):
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng):
+def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng, information):
     """Creates the predictions for the masked LM objective."""
 
-    cand_indexes = wwm(tokens)
-    #cand_indexes = pmi_masking(cand_indexes, tokens, data=cooccurence, single=word_freq)
-    #rng.shuffle(cand_indexes)
-    cand_indexes = flatten(cand_indexes)
+    # information[0] is cooccurence, information[1] is single word probability
 
+    cand_indexes = wwm(tokens)
+    cand_indexes = pmi_masking(cand_indexes, tokens, information)
+    cand_indexes = flatten(cand_indexes)
     output_tokens = list(tokens)
     num_to_predict = min(max_predictions_per_seq, max(1, int(round(len(tokens) * masked_lm_prob))))
 
@@ -560,7 +579,6 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
         else:
             trunc_tokens.pop()
 
-
 def truncate_single_seq(tokens, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
     while True:
@@ -577,7 +595,8 @@ def truncate_single_seq(tokens, max_num_tokens, rng):
 
 def create_pretraining_data(vocab_file, input_file, output_file, bert_model, no_nsp,
                             max_seq_length, dupe_factor, max_predictions_per_seq,
-                            masked_lm_prob, short_seq_prob, do_lower_case, random_seed
+                            masked_lm_prob, short_seq_prob, do_lower_case, random_seed,
+                            information
                             ):
 
     tokenizer = BertTokenizer(vocab_file, do_lower_case=do_lower_case, max_len=512)
@@ -605,6 +624,7 @@ def create_pretraining_data(vocab_file, input_file, output_file, bert_model, no_
         max_predictions_per_seq,
         rng,
         no_nsp,
+        information
     )
 
     output_file = output_file

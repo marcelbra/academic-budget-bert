@@ -133,7 +133,7 @@ def create_finetune_job(args, index, global_step, model):
         checkpoint_id = f"epoch{index}_step{global_step}"
         model.save_weights(
             checkpoint_id=checkpoint_id,
-            output_dir="../dataset/data/Model/",
+            output_dir="./dataset/data/Model/",
             is_deepspeed=args.deepspeed,
         )
         logger.info("Saved fine-tuning job.")

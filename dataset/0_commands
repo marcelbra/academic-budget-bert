@@ -73,7 +73,7 @@ deepspeed run_pretraining.py \
   --use_early_stopping \
   --early_stop_time 180 \
   --early_stop_eval_loss 6 \
-  --seed 36 \
+  --seed 40 \
   --fp16
 
 python run_glue.py \
