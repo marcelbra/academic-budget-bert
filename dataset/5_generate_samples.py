@@ -99,8 +99,22 @@ if __name__ == "__main__":
 
 
 """
+CIS Machine
 python3 5_generate_samples.py \
---dir ./data/Wikipedia/4_MergedShards/ \
+--dir /mounts/data/proj/braasch/4_MergedShards \
+-o /mounts/data/proj/braasch/5_MaskedSamples/ \
+--dup_factor 10 \
+--seed 40 \
+--vocab_file ~/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
+--masked_lm_prob 0.15 \
+--max_seq_length 128 \
+--model_name bert-large-uncased \
+--max_predictions_per_seq 20 \
+--n_processes 60
+
+MY MACHINE
+python3 5_generate_samples.py \
+--dir ./data/Wikipedia/4_MergedShards \
 -o ./data/Wikipedia/5_MaskedSamples/ \
 --dup_factor 10 \
 --seed 40 \

@@ -23,6 +23,7 @@ import os
 import random
 import sys
 from io import open
+from math import log
 
 import h5py
 import numpy as np
@@ -476,7 +477,63 @@ def wwm(tokens):
             current_index = []
     return indices
 
-def pmi_masking(indices, tokens, data, single):
+# def pmi_masking(indices, tokens, information):
+#
+#     cooccurence_n = 152881663068
+#     word_freq_n = 2905788917
+#     new_indices = []
+#
+#     while indices:
+#
+#         # Select a random word and remove it from selection
+#         current_indices = random.choice(indices)
+#         first_word = ""
+#         for index in current_indices:
+#             curr_token = tokens[index]
+#             curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
+#             first_word += curr_token
+#         indices.remove(current_indices)
+#
+#         # When there are no indices left, add current and return
+#         if not indices:
+#             new_indices.append(current_indices)
+#             return new_indices
+#
+#         # For each other token, check pmi and get the best 2nd word
+#         best_pmi = float("-inf")
+#         best_second_word = ""
+#         best_indexes = None
+#         for indexes in indices:
+#
+#             # Grab 2nd word
+#             second_word = ""
+#             for index in indexes:
+#                 curr_token = tokens[index]
+#                 curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
+#                 second_word += curr_token
+#
+#
+#             try:
+#                 cooccurence_prob = information[0][frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
+#                 first_prob = information[1][first_word]
+#                 second_prob = information[1][second_word]
+#                 final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
+#             except KeyError:
+#                 final_pmi = random.random() - 10
+#
+#             if final_pmi > best_pmi:
+#                 best_pmi = final_pmi
+#                 best_second_word = second_word
+#                 best_indexes = indexes
+#
+#         indices.remove(best_indexes)
+#         new_indices.append(current_indices)
+#         new_indices.append(best_indexes)
+#
+#     return new_indices
+
+
+def pmi_masking(indices, tokens, information):
     cooccurence_n = 152881663068
     word_freq_n = 2905788917
     new_indices = []
@@ -489,6 +546,10 @@ def pmi_masking(indices, tokens, data, single):
             curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
             first_word += curr_token
         indices.remove(current_indices)
+        # When there are no indices left, add current and return
+        if not indices:
+            new_indices.append(current_indices)
+            return new_indices
         # For each other token, check pmi and get the best 2nd word
         best_pmi = float("-inf")
         best_second_word = ""
@@ -500,10 +561,13 @@ def pmi_masking(indices, tokens, data, single):
                 curr_token = tokens[index]
                 curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
                 second_word += curr_token
-            cooccurence_prob = information[0][frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
-            first_prob = information[1][first_word] + 1e-6
-            second_prob = information[1][second_word] + 1e-6
-            final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
+            try:
+                cooccurence_prob = information[0][frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
+                first_prob = information[1][first_word] + 1e-6
+                second_prob = information[1][second_word] + 1e-6
+                final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
+            except KeyError:
+                final_pmi = random.random() - 100
             if final_pmi > best_pmi:
                 best_pmi = final_pmi
                 best_second_word = second_word
