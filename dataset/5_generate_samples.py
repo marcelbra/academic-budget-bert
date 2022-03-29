@@ -478,7 +478,7 @@ def wwm(tokens):
             current_index = []
     return indices
 
-def pmi_masking(indices, tokens, information):
+def pmi_masking(indices, tokens):#, information):
 
     cooccurence_n = 152881663068
     word_freq_n = 2905788917
@@ -722,8 +722,9 @@ if __name__ == "__main__":
     cooc_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/cooccurence.pickle"
     word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/vocab.pickle"
     #manager = Manager()
-    coocurence = open_with_pickle(cooc_path)
-    word_probs = open_with_pickle(word_path)
+    from collections import defaultdict
+    coocurence = open_with_pickle(cooc_path)#defaultdict(int)#
+    word_probs = open_with_pickle(word_path)#defaultdict(int)#
     # cooccurence = manager.dict(coocurence)
     # word_probs = manager.dict(word_probs)
 
