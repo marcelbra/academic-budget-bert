@@ -77,10 +77,10 @@ deepspeed run_pretraining.py \
   --fp16
 
 python run_glue.py \
-  --model_name_or_path "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model /321" \
+  --model_name_or_path "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/WWM-Model/epoch22_step227" \
   --task_name MRPC \
   --max_seq_length 128 \
-  --output_dir /tmp/finetuning \
+  --output_dir "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Finetuning/MRPC/epoch22_step227" \
   --overwrite_output_dir \
   --do_train --do_eval \
   --evaluation_strategy steps \
