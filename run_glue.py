@@ -500,6 +500,7 @@ def main():
         trainer.log_metrics("eval", metrics)
         try:
             wandb.run.summary.update(metrics)
+
             log_metrics = {}
             for k, v in metrics.items():
                 log_metrics["final_" + k] = v
