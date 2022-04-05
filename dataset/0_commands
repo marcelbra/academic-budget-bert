@@ -94,6 +94,10 @@ python run_glue.py \
   --lr_scheduler_type polynomial \
   --warmup_steps 50
 
+python run_finetuning.py \
+  --ckpts_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/WWM-Model/ \
+  -o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Finetuning
+
 python3 ./helper/shard_data.py \
     --dir ~/academic-budget-bert/dataset/data/2_Split/0 \
     -o /home/data \
