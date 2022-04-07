@@ -478,71 +478,42 @@ def wwm(tokens):
             current_index = []
     return indices
 
-def pmi_masking(indices, tokens):#, information):
-
-    cooccurence_n = 152881663068
-    word_freq_n = 2905788917
+def pmi_masking(x, tokens):
+    old_indices = deepcopy(x)
     new_indices = []
-
-    while indices:
-
-        # Select a random word and remove it from selection
-        current_indices = random.choice(indices)
+    while old_indices:
+    # Select a random word and remove it from selection
+        first_word_indices = random.choice(old_indices)
         first_word = ""
-        for index in current_indices:
+        for index in first_word_indices:
             curr_token = tokens[index]
             curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
             first_word += curr_token
-        indices.remove(current_indices)
-
-        # When there are no indices left, add current and return
-        if not indices:
-            new_indices.append(current_indices)
+        new_indices.append(first_word_indices)
+        old_indices.remove(first_word_indices)
+        # Return when there no indices left
+        if not old_indices:
             return new_indices
-
-        # When the first word is not in coocurence, choose the 2nd random
-        if not first_word in coocurence:
-            second_indexes = random.choice(indices)
-            indices.remove(second_indexes)
-            new_indices.append(second_indexes)
-            continue
-
-        # For each other token, check pmi and get the best 2nd word
         best_pmi = float("-inf")
-        best_indexes = None
-        saved_indices = []
-        for indexes in indices:
-
+        second_word_indexes = None
+        for indexes in old_indices:
             # Grab 2nd word
             second_word = ""
             for index in indexes:
                 curr_token = tokens[index]
                 curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
                 second_word += curr_token
-
-            # If this word is not in coocurence, disregard it but save it in case all other
-            # 2nd words are not in vocab
-            if not second_word in coocurence:
-                saved_indices.append(indexes)
+            if first_word == second_word: continue
+            try:
+                final_pmi = log((cooc[frozenset({first_word, second_word})])/(freq[first_word]*freq[second_word]))
+            except:
                 continue
-
-            cooccurence_prob = coocurence[frozenset({first_word,second_word})] / cooccurence_n  + 1e-8
-            first_prob = word_probs[first_word] + 1e-8
-            second_prob = word_probs[second_word] + 1e-8
-            final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
-
             if final_pmi > best_pmi:
                 best_pmi = final_pmi
-                best_indexes = indexes
-
-        # Check if there has been a best second word or if we should choose a random one from the saved indices
-        if best_indexes is None:
-            best_indexes = random.choice(saved_indices)
-
-        indices.remove(best_indexes)
-        new_indices.append(current_indices)
-        new_indices.append(best_indexes)
-
+                second_word_indexes = indexes
+        old_indices.remove(second_word_indexes)
+        #new_indices.append(first_word_indices)
+        new_indices.append(second_word_indexes)
     return new_indices
 
 def flatten(l):
@@ -723,8 +694,8 @@ if __name__ == "__main__":
     word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/vocab.pickle"
     #manager = Manager()
     from collections import defaultdict
-    coocurence = open_with_pickle(cooc_path)#defaultdict(int)#
-    word_probs = open_with_pickle(word_path)#defaultdict(int)#
+    cooc = open_with_pickle(cooc_path)#defaultdict(int)#
+    freq = open_with_pickle(word_path)#defaultdict(int)#
     # cooccurence = manager.dict(coocurence)
     # word_probs = manager.dict(word_probs)
 

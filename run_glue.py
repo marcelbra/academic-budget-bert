@@ -20,7 +20,6 @@
 import json
 import logging
 import os
-import pickle
 import random
 import sys
 from argparse import Namespace
@@ -450,24 +449,23 @@ def main():
 
     # init early stopping callback and metric to monitor
     callbacks = None
-
-    metric_monitor = {
-        "mrpc": "f1",
-        "sst2": "accuracy",
-        "mnli": "accuracy",
-        "mnli_mismatched": "accuracy",
-        "mnli_matched": "accuracy",
-        "cola": "matthews_correlation",
-        "stsb": "spearmanr",
-        "qqp": "f1",
-        "qnli": "accuracy",
-        "rte": "accuracy",
-        "wnli": "accuracy",
-    }
-
     if training_args.early_stopping_patience > 0:
         early_cb = EarlyStoppingCallback(training_args.early_stopping_patience)
         callbacks = [early_cb]
+
+        metric_monitor = {
+            "mrpc": "f1",
+            "sst2": "accuracy",
+            "mnli": "accuracy",
+            "mnli_mismatched": "accuracy",
+            "mnli_matched": "accuracy",
+            "cola": "matthews_correlation",
+            "stsb": "spearmanr",
+            "qqp": "f1",
+            "qnli": "accuracy",
+            "rte": "accuracy",
+            "wnli": "accuracy",
+        }
         metric_to_monitor = metric_monitor[data_args.task_name]
         setattr(training_args, "metric_for_best_model", metric_to_monitor)
 
@@ -502,19 +500,11 @@ def main():
         trainer.log_metrics("eval", metrics)
         try:
             wandb.run.summary.update(metrics)
+
             log_metrics = {}
             for k, v in metrics.items():
                 log_metrics["final_" + k] = v
             wandb.log(log_metrics)
-            # print("*"*20)
-            # print("\n"*3)
-            # #print(metric_monitor[data_args.task_name])
-            # print()#[metric_monitor])
-            # print("\n"*3)
-            # print("*"*20)
-            # with open(os.path.join(training_args.output_dir, "metric.pkl"), "wb") as handle:
-            #     pickle.dump(float(dict(wandb.run.summary)[f"eval/{metric_monitor[data_args.task_name]}"]),
-            #                 handle, protocol=pickle.HIGHEST_PROTOCOL)
         except Exception as e:
             logger.warning("W&B logger is not available, please install to get proper logging")
             logger.error(e)
