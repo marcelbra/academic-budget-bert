@@ -478,8 +478,7 @@ def wwm(tokens):
             current_index = []
     return indices
 
-def pmi_masking(x, tokens):
-    old_indices = deepcopy(x)
+def pmi_masking(old_indices, tokens):
     new_indices = []
     while old_indices:
     # Select a random word and remove it from selection
@@ -691,11 +690,12 @@ if __name__ == "__main__":
                                 # information=information)
 
     cooc_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/cooccurence.pickle"
-    word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/merge_final_from_merge_7/vocab.pickle"
+    word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/5_merged_data/vocab.pickle"
     #manager = Manager()
-    from collections import defaultdict
-    cooc = open_with_pickle(cooc_path)#defaultdict(int)#
+    #from collections import defaultdict
     freq = open_with_pickle(word_path)#defaultdict(int)#
+    cooc = open_with_pickle(cooc_path)#defaultdict(int)#
+    #freq = open_with_pickle(word_path)#defaultdict(int)#
     # cooccurence = manager.dict(coocurence)
     # word_probs = manager.dict(word_probs)
 
