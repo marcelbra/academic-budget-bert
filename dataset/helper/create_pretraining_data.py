@@ -477,49 +477,44 @@ def wwm(tokens):
             current_index = []
     return indices
 
-def pmi_masking(indices, tokens, information):
-    cooccurence_n = 152881663068
-    word_freq_n = 2905788917
+def create_word_from_indices(tokens, indices):
+    word = ""
+    for index in indices:
+        curr_token = tokens[index]
+        curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
+        word += curr_token
+    return word
+
+def pmi(first_word, second_word):
+    coocurence = cooc[frozenset({first_word, second_word})]
+    first_freq, second_freq = freq[second_word], freq[second_word]
+    return log(coocurence/(first_freq*second_freq)) if coocurence else float("-inf")
+
+def pmi_ranking(tokens, old_indices):
     new_indices = []
-    while indices:
-        # Select a random word and remove it from selection
-        current_indices = random.choice(indices)
-        first_word = ""
-        for index in current_indices:
-            curr_token = tokens[index]
-            curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
-            first_word += curr_token
-        indices.remove(current_indices)
-        # When there are no indices left, add current and return
-        if not indices:
-            new_indices.append(current_indices)
+    while old_indices:
+        first_word_indices = old_indices.pop(random.randrange(len(old_indices)))
+        new_indices.append(first_word_indices)
+        first_word = create_word_from_indices(tokens, first_word_indices)
+        if not old_indices:
             return new_indices
-        # For each other token, check pmi and get the best 2nd word
         best_pmi = float("-inf")
-        best_second_word = ""
-        best_indexes = None
-        for indexes in indices:
-            # Grab 2nd word
-            second_word = ""
-            for index in indexes:
-                curr_token = tokens[index]
-                curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
-                second_word += curr_token
+        best_second_indices = None
+        for second_word_indices in old_indices:
+            second_word = create_word_from_indices(tokens, second_word_indices)
+            if first_word == second_word: continue
             try:
-                cooccurence_prob = information[0][frozenset({first_word,second_word})] / cooccurence_n  + 1e-6
-                first_prob = information[1][first_word] + 1e-6
-                second_prob = information[1][second_word] + 1e-6
-                final_pmi = log(cooccurence_prob/((first_prob*second_prob)/word_freq_n**2))
-            except KeyError:
-                final_pmi = random.random() - 100
-            if final_pmi > best_pmi:
-                best_pmi = final_pmi
-                best_second_word = second_word
-                best_indexes = indexes
-        indices.remove(best_indexes)
-        new_indices.append(current_indices)
-        new_indices.append(best_indexes)
+                current_pmi = pmi(first_word, second_word)
+            except:
+                continue
+            if current_pmi > best_pmi:
+                best_second_indices = second_word_indices
+                best_pmi = current_pmi
+        if not best_second_indices is None:
+            old_indices.remove(best_second_indices)
+            new_indices.append(best_second_indices)
     return new_indices
+
 
 def flatten(l):
     return [item for sublist in l for item in sublist]

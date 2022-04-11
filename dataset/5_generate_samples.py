@@ -511,7 +511,6 @@ def pmi_masking(old_indices, tokens):
                 best_pmi = final_pmi
                 second_word_indexes = indexes
         old_indices.remove(second_word_indexes)
-        #new_indices.append(first_word_indices)
         new_indices.append(second_word_indexes)
     return new_indices
 

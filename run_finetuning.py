@@ -25,6 +25,7 @@ def main():
                           --overwrite_output_dir \
                           --do_train \
                           --do_eval \
+                          --do_predict \
                           --evaluation_strategy steps \
                           --per_device_train_batch_size 32 \
                           --gradient_accumulation_steps 1 \
