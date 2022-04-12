@@ -496,7 +496,7 @@ def pmi_ranking(tokens, old_indices):
         first_word_indices = old_indices.pop(random.randrange(len(old_indices)))
         new_indices.append(first_word_indices)
         first_word = create_word_from_indices(tokens, first_word_indices)
-        if not old_indices:
+        if not old_indices or len(new_indices) >= 20:
             return new_indices
         best_pmi = float("-inf")
         best_second_indices = None
