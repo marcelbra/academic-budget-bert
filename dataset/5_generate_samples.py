@@ -491,7 +491,7 @@ def pmi_masking(old_indices, tokens):
         new_indices.append(first_word_indices)
         old_indices.remove(first_word_indices)
         # Return when there no indices left
-        if not old_indices:
+        if not old_indices or len(new_indices) >= 20:
             return new_indices
         best_pmi = float("-inf")
         second_word_indexes = None
@@ -507,7 +507,7 @@ def pmi_masking(old_indices, tokens):
                 final_pmi = log((cooc[frozenset({first_word, second_word})])/(freq[first_word]*freq[second_word]))
             except:
                 continue
-            if final_pmi > best_pmi:
+            if final_pmi > best_pmi or second_word_indexes is None:
                 best_pmi = final_pmi
                 second_word_indexes = indexes
         old_indices.remove(second_word_indexes)
