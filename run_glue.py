@@ -447,12 +447,6 @@ def main():
         logger.warning("W&B logger is not available, please install to get proper logging")
         logger.error(e)
 
-    # init early stopping callback and metric to monitor
-    callbacks = None
-    if training_args.early_stopping_patience > 0:
-        early_cb = EarlyStoppingCallback(training_args.early_stopping_patience)
-        callbacks = [early_cb]
-
         metric_monitor = {
             "mrpc": "f1",
             "sst2": "accuracy",
@@ -466,6 +460,13 @@ def main():
             "rte": "accuracy",
             "wnli": "accuracy",
         }
+
+    # init early stopping callback and metric to monitor
+    callbacks = None
+    if training_args.early_stopping_patience > 0:
+        early_cb = EarlyStoppingCallback(training_args.early_stopping_patience)
+        callbacks = [early_cb]
+
         metric_to_monitor = metric_monitor[data_args.task_name]
         setattr(training_args, "metric_for_best_model", metric_to_monitor)
 
@@ -508,6 +509,9 @@ def main():
         except Exception as e:
             logger.warning("W&B logger is not available, please install to get proper logging")
             logger.error(e)
+    path = f"/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Finetuning/{data_args.task_name}.txt"
+    with open(path, "w") as file:
+        file.write(str(dict(wandb.run.summary)))
 
     if training_args.do_predict:
         logger.info("*** Test ***")
@@ -523,6 +527,7 @@ def main():
             # Removing the `label` columns because it contains -1 and Trainer won't like that.
             test_dataset.remove_columns_("label")
             predictions = trainer.predict(test_dataset=test_dataset).predictions
+
             predictions = (
                 np.squeeze(predictions) if is_regression else np.argmax(predictions, axis=1)
             )

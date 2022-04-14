@@ -6,7 +6,7 @@ def main():
     parser.add_argument("--ckpts_dir", type=str, required=True, help="Path to the directory of finetuning checkpoints.")
     parser.add_argument("-o", type=str, required=True, help="Path to the directory of finetuning results")
     args = parser.parse_args()
-    tasks = ["qqp"] # "cola", "qnli", "qqp", "rte", "sst2", "stsb", "wnli", "mrpc"
+    tasks = ["qqp", "rte", "sst2", "stsb", "wnli"] # "cola", "qnli", "qqp", "rte", "sst2", "stsb", "wnli", "mrpc"
     finetuning_ckpts = next(os.walk(args.ckpts_dir))[1]
     #print(finetuning_ckpts)
     for i, task in enumerate(tasks):

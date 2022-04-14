@@ -26,6 +26,7 @@ import os
 import random
 from io import open
 from math import log
+from collections import defaultdict
 
 import h5py
 import numpy as np
@@ -511,9 +512,11 @@ def pmi_masking(old_indices, tokens):
             if current_pmi > best_pmi or second_word_indices is None:
                 best_second_indices = second_word_indices
                 best_pmi = current_pmi
-        if not best_second_indices is None:
+        try:
             old_indices.remove(best_second_indices)
             new_indices.append(best_second_indices)
+        except:
+            return new_indices
     return new_indices
 
 def flatten(l):
@@ -694,8 +697,10 @@ if __name__ == "__main__":
     word_path = "/mounts/work/kerem/Projects/pmi_masking/wiki_again/5_merged_data/vocab.pickle"
     #manager = Manager()
     #from collections import defaultdict
-    freq = open_with_pickle(word_path)#defaultdict(int)#
-    cooc = open_with_pickle(cooc_path)#defaultdict(int)#
+    # freq = open_with_pickle(word_path)#defaultdict(int)#
+    # cooc = open_with_pickle(cooc_path)#defaultdict(int)#
+    freq = defaultdict(lambda: random.random()*10)
+    cooc = defaultdict(lambda: random.random())
     #freq = open_with_pickle(word_path)#defaultdict(int)#
     # cooccurence = manager.dict(coocurence)
     # word_probs = manager.dict(word_probs)
@@ -743,5 +748,5 @@ python3 5_generate_samples.py \
 --max_seq_length 128 \
 --model_name bert-large-uncased \
 --max_predictions_per_seq 20 \
---n_processes 30
+--n_processes 1
 """
