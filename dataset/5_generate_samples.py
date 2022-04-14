@@ -497,7 +497,7 @@ def pmi_masking(old_indices, tokens):
         first_word_indices = old_indices.pop(random.randrange(len(old_indices)))
         new_indices.append(first_word_indices)
         first_word = create_word_from_indices(tokens, first_word_indices)
-        if not old_indices:
+        if not old_indices or len(new_indices) >= 20:
             return new_indices
         best_pmi = float("-inf")
         best_second_indices = None
@@ -508,7 +508,7 @@ def pmi_masking(old_indices, tokens):
                 current_pmi = pmi(first_word, second_word)
             except:
                 continue
-            if current_pmi > best_pmi:
+            if current_pmi > best_pmi or second_word_indices is None:
                 best_second_indices = second_word_indices
                 best_pmi = current_pmi
         if not best_second_indices is None:
