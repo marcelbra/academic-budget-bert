@@ -478,40 +478,42 @@ def wwm(tokens):
             current_index = []
     return indices
 
+def create_word_from_indices(tokens, indices):
+    word = ""
+    for index in indices:
+        curr_token = tokens[index]
+        curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
+        word += curr_token
+    return word
+
+def pmi(first_word, second_word):
+    coocurence = cooc[frozenset({first_word, second_word})]
+    first_freq, second_freq = freq[second_word], freq[second_word]
+    return log(coocurence/(first_freq*second_freq)) if coocurence else float("-inf")
+
 def pmi_masking(old_indices, tokens):
     new_indices = []
     while old_indices:
-    # Select a random word and remove it from selection
-        first_word_indices = random.choice(old_indices)
-        first_word = ""
-        for index in first_word_indices:
-            curr_token = tokens[index]
-            curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
-            first_word += curr_token
+        first_word_indices = old_indices.pop(random.randrange(len(old_indices)))
         new_indices.append(first_word_indices)
-        old_indices.remove(first_word_indices)
-        # Return when there no indices left
-        if not old_indices or len(new_indices) >= 20:
+        first_word = create_word_from_indices(tokens, first_word_indices)
+        if not old_indices:
             return new_indices
         best_pmi = float("-inf")
-        second_word_indexes = None
-        for indexes in old_indices:
-            # Grab 2nd word
-            second_word = ""
-            for index in indexes:
-                curr_token = tokens[index]
-                curr_token = curr_token[2:] if curr_token.startswith("##") else curr_token
-                second_word += curr_token
+        best_second_indices = None
+        for second_word_indices in old_indices:
+            second_word = create_word_from_indices(tokens, second_word_indices)
             if first_word == second_word: continue
             try:
-                final_pmi = log((cooc[frozenset({first_word, second_word})])/(freq[first_word]*freq[second_word]))
+                current_pmi = pmi(first_word, second_word)
             except:
                 continue
-            if final_pmi > best_pmi or second_word_indexes is None:
-                best_pmi = final_pmi
-                second_word_indexes = indexes
-        old_indices.remove(second_word_indexes)
-        new_indices.append(second_word_indexes)
+            if current_pmi > best_pmi:
+                best_second_indices = second_word_indices
+                best_pmi = current_pmi
+        if not best_second_indices is None:
+            old_indices.remove(best_second_indices)
+            new_indices.append(best_second_indices)
     return new_indices
 
 def flatten(l):
@@ -728,6 +730,7 @@ python3 5_generate_samples.py \
 --model_name bert-large-uncased \
 --max_predictions_per_seq 20 \
 --n_processes 64
+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
 
 MY MACHINE
 python3 5_generate_samples.py \
