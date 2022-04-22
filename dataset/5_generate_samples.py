@@ -527,8 +527,8 @@ def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq
 
     # information[0] is cooccurence, information[1] is single word probability
 
-    cand_indexes = wwm(tokens)
-    cand_indexes = pmi_masking(cand_indexes, tokens)#, information)
+    cand_indexes = wwm(tokens) #
+    #cand_indexes = pmi_masking(cand_indexes, tokens)#, information)
     cand_indexes = flatten(cand_indexes)
     output_tokens = list(tokens)
     num_to_predict = min(max_predictions_per_seq, max(1, int(round(len(tokens) * masked_lm_prob))))
@@ -544,15 +544,15 @@ def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq
 
         masked_token = None
         # 80% of the time, replace with [MASK]
-        if rng.random() < 0.8:
-            masked_token = "[MASK]"
-        else:
-            # 10% of the time, keep original
-            if rng.random() < 0.5:
-                masked_token = tokens[index]
-            # 10% of the time, replace with random word
-            else:
-                masked_token = vocab_words[rng.randint(0, len(vocab_words) - 1)]
+        # if rng.random() < 0.8:
+        masked_token = "[MASK]"
+        # else:
+        #     # 10% of the time, keep original
+        #     if rng.random() < 0.5:
+        #         masked_token = tokens[index]
+        #     # 10% of the time, replace with random word
+        #     else:
+        #         masked_token = vocab_words[rng.randint(0, len(vocab_words) - 1)]
 
         output_tokens[index] = masked_token
 
