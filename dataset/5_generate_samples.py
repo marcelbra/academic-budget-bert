@@ -19,7 +19,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import logging
 from multiprocessing import Manager, Process
-import pickle5 as pickle
+import pickle as pickle
 import argparse
 import collections
 import os
@@ -479,6 +479,9 @@ def wwm(tokens):
             current_index = []
     return indices
 
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+
 def create_word_from_indices(tokens, indices):
     word = ""
     for index in indices:
@@ -519,16 +522,13 @@ def pmi_masking(old_indices, tokens):
             return new_indices
     return new_indices
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
-
 def create_masked_lm_predictions(tokens, masked_lm_prob, max_predictions_per_seq, vocab_words, rng):#, information):
     """Creates the predictions for the masked LM objective."""
 
     # information[0] is cooccurence, information[1] is single word probability
 
-    cand_indexes = wwm(tokens) #
-    #cand_indexes = pmi_masking(cand_indexes, tokens)#, information)
+    cand_indexes = wwm(tokens)
+    cand_indexes = pmi_masking(cand_indexes, tokens)#, information)
     cand_indexes = flatten(cand_indexes)
     output_tokens = list(tokens)
     num_to_predict = min(max_predictions_per_seq, max(1, int(round(len(tokens) * masked_lm_prob))))
@@ -749,4 +749,16 @@ python3 5_generate_samples.py \
 --model_name bert-large-uncased \
 --max_predictions_per_seq 20 \
 --n_processes 1
+
+python3 generate_samples.py \
+--dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/4_MergedShards \
+-o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples_WWM100MASK/ \
+--dup_factor 10 \
+--seed 40 \
+--vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
+--masked_lm_prob 0.15 \
+--max_seq_length 128 \
+--model_name bert-large-uncased \
+--max_predictions_per_seq 20 \
+--n_processes 31
 """

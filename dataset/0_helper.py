@@ -105,6 +105,7 @@ article4 = """The series was broadcast in three parts on BBC Two in December 201
 ########################################################################################
 
 path = "/mounts/data/proj/braasch/5_MaskedSamples/train_shard_100.hdf5"
+path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples_WWM100MASK/test_shard_1.hdf5"
 f = h5py.File(path, "r")
 input_ids, input_mask, masked_lm_ids, masked_lm_positions, segment_ids = [f[list(f.keys())[i]] for i in range(5)]
 get_information = lambda x: print(f"input_ids[x] {input_ids[x]}", f"tokenizer.convert_ids_to_tokens(input_ids[x]) {tokenizer.convert_ids_to_tokens(input_ids[x])}", f"masked_lm_ids[x] {masked_lm_ids[x]}", f"masked tokens {tokenizer.convert_ids_to_tokens(masked_lm_ids[x])}",f"masked_lm_positions[x] {masked_lm_positions[x]}", f"Manually calculated mask position {[i for i,x in enumerate(input_ids[x]) if x==103]}", f"Difference {set(masked_lm_positions[x])-{i for i,x in enumerate(input_ids[x]) if x==103}}",sep="\n\n")
