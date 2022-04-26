@@ -30,7 +30,7 @@ def main():
                           --eval_steps 50 \
                           --evaluation_strategy steps \
                           --max_grad_norm 1.0 \
-                          --num_train_epochs 1 \
+                          --num_train_epochs 5 \
                           --lr_scheduler_type polynomial \
                           --warmup_steps 50"""
 
