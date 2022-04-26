@@ -1,7 +1,7 @@
 import os
 import random
 
-path = "/mounts/data/proj/braasch/5_MaskedSamples/
+path = "/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples_WWM100MASK/"
 #path = "/Users/marcelbraasch/Desktop/TestFiles/"
 files = os.listdir(path)
 random.shuffle(files)

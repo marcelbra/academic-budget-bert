@@ -509,10 +509,11 @@ def main():
         except Exception as e:
             logger.warning("W&B logger is not available, please install to get proper logging")
             logger.error(e)
-    path = f"/home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Finetuning/{data_args.task_name}.txt"
+    file_name = f"{model_args.model_name_or_path.split('/')[-1]}_{data_args.task_name}.txt"
+    dir = "/".join(training_args.output_dir.split("/")[:-1])
+    path = os.path.join(dir, file_name)
     with open(path, "w") as file:
         file.write(str(dict(wandb.run.summary)))
-
     if training_args.do_predict:
         logger.info("*** Test ***")
 

@@ -752,7 +752,7 @@ python3 5_generate_samples.py \
 
 python3 generate_samples.py \
 --dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/4_MergedShards \
--o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples_WWM100MASK/ \
+-o /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples_RANDOMOLD/ \
 --dup_factor 10 \
 --seed 40 \
 --vocab_file /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/bert_large_uncased_vocab.txt \
@@ -760,5 +760,5 @@ python3 generate_samples.py \
 --max_seq_length 128 \
 --model_name bert-large-uncased \
 --max_predictions_per_seq 20 \
---n_processes 31
+--n_processes 32
 """

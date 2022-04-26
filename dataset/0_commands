@@ -55,10 +55,10 @@ deepspeed run_pretraining.py \
   --adam_eps 1e-6 \
   --total_training_time 48.0 \
   --early_exit_time_marker 24.0 \
-  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples \
-  --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Model/ \
+  --dataset_path /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/Wikipedia/5_MaskedSamples_WWM100MASK \
+  --output_dir /home/marcelbraasch/PycharmProjects/academic-budget-bert/dataset/data/WWM-Model/ \
   --print_steps 100 \
-  --num_epochs_between_checkpoints 22 \
+  --num_epochs_between_checkpoints 50 \
   --job_name pretraining_experiment \
   --project_name budget-bert-pretraining \
   --validation_epochs 3 \

@@ -6,15 +6,11 @@ def main():
     parser.add_argument("--ckpts_dir", type=str, required=True, help="Path to the directory of finetuning checkpoints.")
     parser.add_argument("-o", type=str, required=True, help="Path to the directory of finetuning results")
     args = parser.parse_args()
-    tasks = ["qqp", "rte", "sst2", "stsb", "wnli"] # "cola", "qnli", "qqp", "rte", "sst2", "stsb", "wnli", "mrpc"
+    tasks = ["mrpc", "cola", "wnli", "qqp", "rte", "sst2", "stsb", "qnli"]
     finetuning_ckpts = next(os.walk(args.ckpts_dir))[1]
     #print(finetuning_ckpts)
     for i, task in enumerate(tasks):
         for ckpt in finetuning_ckpts:
-            # print("New:")
-            # print(f"{args.ckpts_dir}{ckpt}")
-            # print(f"{task}")
-            # print()
             command = f"""python run_glue.py \
                           --model_name_or_path {args.ckpts_dir}/{ckpt} \
                           --group_name {task} \
@@ -25,7 +21,6 @@ def main():
                           --overwrite_output_dir \
                           --do_train \
                           --do_eval \
-                          --do_predict \
                           --evaluation_strategy steps \
                           --per_device_train_batch_size 32 \
                           --gradient_accumulation_steps 1 \
@@ -35,7 +30,7 @@ def main():
                           --eval_steps 50 \
                           --evaluation_strategy steps \
                           --max_grad_norm 1.0 \
-                          --num_train_epochs 4 \
+                          --num_train_epochs 1 \
                           --lr_scheduler_type polynomial \
                           --warmup_steps 50"""
 
